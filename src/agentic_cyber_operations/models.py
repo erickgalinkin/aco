@@ -137,6 +137,7 @@ class PPO:
         batch_size=32,
     ):
         self.has_continuous_action_space = has_continuous_action_space
+        exit()
 
         if has_continuous_action_space:
             self.action_std = action_std_init

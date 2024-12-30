@@ -19,21 +19,21 @@ MAX_EPS = 10000
 class MultiAgentGymWrapper(Env, BaseWrapper):
     def __init__(self, env: BaseWrapper = None):
         super().__init__(env)
-        red_action_space = self.get_action_space("Red")
+        red_action_space = spaces.MultiDiscrete(self.get_action_space("Red"))
         red_box_len = len(self.observation_change(self.env.reset("Red").observation))
         red_observation_space = spaces.Box(
             -1.0, 1.0, shape=(red_box_len,), dtype=np.float32
         )
         self.red_agent = RedAgent(
-            action_size=red_action_space, state_size=red_observation_space
+            action_size=len(red_action_space), state_size=red_box_len
         )
-        blue_action_space = self.get_action_space("Blue")
+        blue_action_space = spaces.MultiDiscrete(self.get_action_space("Blue"))
         blue_box_len = len(self.observation_change(self.env.reset("Blue").observation))
         blue_observation_space = spaces.Box(
             -1.0, 1.0, shape=(blue_box_len,), dtype=np.float32
         )
         self.blue_agent = BlueAgent(
-            action_size=blue_action_space, state_size=blue_observation_space
+            action_size=len(blue_action_space), state_size=blue_box_len
         )
         self.green_agent = GreenAgent()
         self.reward_range = (float("-inf"), float("inf"))
