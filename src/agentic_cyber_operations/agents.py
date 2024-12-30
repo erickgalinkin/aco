@@ -1,6 +1,4 @@
 from CybORG.Agents.SimpleAgents.BaseAgent import BaseAgent
-from CybORG.Shared import Results
-import CybORG.Shared.Actions as acts
 from models import PPO
 
 

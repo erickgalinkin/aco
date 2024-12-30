@@ -43,17 +43,29 @@ class MultiAgentGymWrapper(Env, BaseWrapper):
             "Blue": self.blue_agent,
             "Green": self.green_agent,
         }
+        self.observation_spaces = {
+            "Red": red_observation_space,
+            "Blue": blue_observation_space,
+        }
+        self.action_spaces = {"Red": red_action_space, "Blue": blue_action_space}
         self.uuid = str(uuid4())
         self.writer = SummaryWriter(log_dir=f"./logs/{self.uuid}")
+        self.action_space = None
+        self.observation_space = None
+        self.action = None
 
     def step(self, agent: str = None, action: Union[int, List[int]] = None):
+        if agent in ["Red", "Blue"]:
+            self.action_space = self.action_spaces[agent]
+            self.observation_space = self.observation_spaces[agent]
+        self.action = action
         result = self.env.step(agent, action)
         result.observation = self.observation_change(result.observation)
         result.action_space = self.action_space_change(result.action_space)
         terminated = result.done
         truncated = False
         info = vars(result)
-        return np.array(result.observation), result.reward, terminated, info
+        return np.array(result.observation), result.reward, terminated, truncated, info
 
     def reset(self, agent=None, **kwargs):
         result = self.env.reset(agent=agent, **kwargs)
@@ -83,25 +95,23 @@ class MultiAgentGymWrapper(Env, BaseWrapper):
         return self.get_attr("get_rewards")()
 
 
-def run_training_example(scenario="scenario1b"):
+def run_training_example(scenario="Scenario1b"):
     path = str(inspect.getfile(CybORG))
     path = path[:-10] + f"/Shared/Scenarios/{scenario}.yaml"
 
-    agent_name = "Red"
     cyborg = MultiAgentGymWrapper(
         env=IntListToActionWrapper(FixedFlatWrapper(CybORG(path, "sim")))
     )
 
-    action_count = 0
     for i in tqdm(range(MAX_EPS), position=0):  # playing multiple games
         rewards = {"Red": 0, "Blue": 0}
         for j in tqdm(range(MAX_STEPS_PER_GAME), position=1):  # step in 1 game
-            for player in ["Red", "Blue", "Green"]:
+            for player in ["Blue", "Red", "Green"]:
                 observation = cyborg.get_observation(player)
                 action_space = cyborg.get_action_space(player)
                 action = cyborg.agents[player].get_action(observation, action_space)
                 next_observation, r, terminated, truncated, info = cyborg.step(
-                    agent=player, action=action
+                    agent=player, action=[action]
                 )
                 done = terminated or truncated
                 if player in rewards.keys():
