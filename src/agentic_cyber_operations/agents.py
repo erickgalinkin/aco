@@ -1,0 +1,28 @@
+from CybORG.Agents.SimpleAgents.BaseAgent import BaseAgent
+from CybORG.Shared import Results
+import CybORG.Shared.Actions as acts
+from models import PPO
+
+
+class RedAgent(BaseAgent):
+    def __init__(self, action_size=None, state_size=None):
+        self.model = PPO(state_dim=state_size, action_dim=action_size)
+
+    def get_action(self, observation, action_space):
+        action = self.model.select_action(observation)
+        return action
+
+    def train(self, results):
+        self.model.update()
+
+
+class BlueAgent(BaseAgent):
+    def __init__(self, action_size=None, state_size=None):
+        self.model = PPO(state_dim=state_size, action_dim=action_size)
+
+    def get_action(self, observation, action_space):
+        action = self.model.select_action(observation)
+        return action
+
+    def train(self, results):
+        self.model.update()
