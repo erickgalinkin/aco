@@ -1,6 +1,6 @@
+import logging
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 from torch.distributions import MultivariateNormal, Categorical
 
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -223,6 +223,10 @@ class PPO:
             with torch.no_grad():
                 state = torch.FloatTensor(state).to(DEVICE)
                 if state.shape[0] != self.policy_old.state_dim:
+                    logging.warning(
+                        f"State dimension {state.shape[0]} does not match policy dimension {self.policy_old.state_dim}! "
+                        f"Truncating input."
+                    )
                     # Truncate cases where the state shape gets weird.
                     if state.shape[0] > self.policy_old.state_dim:
                         new_state = state[: self.policy_old.state_dim].detach()
@@ -239,6 +243,7 @@ class PPO:
     def update(self):
         if len(self.buffer) < self.batch_size:
             return
+        logging.info("Training model...")
         # Monte Carlo estimate of returns
         rewards = []
         discounted_reward = 0
