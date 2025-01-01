@@ -7,7 +7,9 @@ class RedAgent(BaseAgent):
         self.model = PPO(state_dim=state_size, action_dim=action_size)
 
     def get_action(self, observation, action_space):
-        action = self.model.select_action(observation)
+        print(observation, action_space)
+        pred = self.model.select_action(observation)
+        action = action_space[pred]
         return action
 
     def train(self, results):
