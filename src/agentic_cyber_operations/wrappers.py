@@ -1,7 +1,8 @@
+import logging
 import inspect
 import math
 from copy import deepcopy
-from typing import Optional, Union, List
+from typing import Union, List
 from prettytable import PrettyTable
 import numpy as np
 from gymnasium import spaces, Env
@@ -48,7 +49,7 @@ class MultiAgentIntListToActionWrapper(BaseWrapper):
             result.action_space
         )
         self.selection_mask = result.selection_masks
-        result.observation = self.observation_change(result.observation)
+        result.observation = self.observation_change(observation=result.observation)
         return result
 
     def get_action_space(self, agent: str) -> dict:
@@ -123,7 +124,9 @@ class MultiAgentGymWrapper(Env, BaseWrapper):
         else:
             red_action_space = spaces.Discrete(self.get_action_space("Red"))
             red_action_size = red_action_space.n
-        red_box_len = len(self.observation_change(self.env.reset("Red").observation))
+        red_box_len = len(
+            self.observation_change(observation=self.env.reset("Red").observation)
+        )
         red_observation_space = spaces.Box(
             -1.0, 1.0, shape=(red_box_len,), dtype=np.float32
         )
@@ -135,7 +138,9 @@ class MultiAgentGymWrapper(Env, BaseWrapper):
         else:
             blue_action_space = spaces.Discrete(self.get_action_space("Blue"))
             blue_action_size = blue_action_space.n
-        blue_box_len = len(self.observation_change(self.env.reset("Blue").observation))
+        blue_box_len = len(
+            self.observation_change(observation=self.env.reset("Blue").observation)
+        )
         blue_observation_space = spaces.Box(
             -1.0, 1.0, shape=(blue_box_len,), dtype=np.float32
         )
@@ -163,12 +168,11 @@ class MultiAgentGymWrapper(Env, BaseWrapper):
         self.action = None
 
     def step(self, agent: str = None, action: Union[int, List[int]] = None):
-        if agent in ["Red", "Blue"]:
-            self.action_space = self.action_spaces[agent]
-            self.observation_space = self.observation_spaces[agent]
+        self.action_space = self.action_spaces[agent]
+        self.observation_space = self.observation_spaces[agent]
         self.action = action
         result = self.env.step(agent, action)
-        result.observation = self.observation_change(result.observation)
+        result.observation = self.observation_change(observation=result.observation)
         result.action_space = self.action_space_change(result.action_space)
         terminated = result.done
         truncated = False
@@ -213,7 +217,7 @@ class MultiAgentTableWrapper(BaseWrapper):
         red_env = TrueTableWrapper(env=env, agent="Red")
         blue_env = TrueTableWrapper(env=env, agent="Blue")
         self.envs = {"Red": red_env, "Blue": blue_env}
-
+        self.active_agent = None
         self.red_info = dict()
         self.blue_info = dict()
         self.known_subnets = set()
@@ -224,6 +228,7 @@ class MultiAgentTableWrapper(BaseWrapper):
         self.baseline = None
 
     def reset(self, agent=None, **kwargs):
+        self.active_agent = agent
         self.env = self.envs[agent]
         result = self.env.reset(agent, **kwargs)
         if agent == "Red":
@@ -232,13 +237,10 @@ class MultiAgentTableWrapper(BaseWrapper):
             self.step_counter = -1
             self.id_tracker = -1
             self.success = None
-            obs = self.observation_change(result.observation)
-            result.observation = obs
+            result.observation = self.observation_change(observation=result.observation)
         elif agent == "Blue":
-            obs = result.observation
-            self._process_initial_obs(agent="Blue", observation=obs)
-            obs = self.observation_change(agent="Blue", observation=obs)
-            result.observation = obs
+            self._process_initial_obs(agent="Blue", observation=result.observation)
+            result.observation = self.observation_change(observation=result.observation)
         return result
 
     def get_table(self, agent=None):
@@ -249,10 +251,9 @@ class MultiAgentTableWrapper(BaseWrapper):
         elif agent is None:
             return self.env.get_table()
 
-    def observation_change(self, agent, observation):
-        if agent == "Red":
+    def observation_change(self, observation, baseline=False):
+        if self.active_agent == "Red":
             self.success = observation["success"]
-
             self.step_counter += 1
             if self.step_counter <= 0:
                 self._process_initial_obs(agent="Red", observation=observation)
@@ -267,13 +268,10 @@ class MultiAgentTableWrapper(BaseWrapper):
                 obs = observation
             else:
                 raise NotImplementedError("Invalid output_mode")
-
             return obs
-        if agent == "Blue":
-            baseline = False
+        if self.active_agent == "Blue":
             obs = deepcopy(observation)
             success = obs["success"]
-
             self._process_last_action()
             anomaly_obs = self._detect_anomalies(obs) if not baseline else obs
             del obs["success"]
@@ -294,7 +292,7 @@ class MultiAgentTableWrapper(BaseWrapper):
             elif self.output_mode == "raw":
                 return observation
             elif self.output_mode == "vector":
-                return self._create_vector(success)
+                return self._create_vector(agent="Blue", success=success)
             else:
                 raise NotImplementedError("Invalid output_mode for BlueTableWrapper")
 
@@ -456,13 +454,30 @@ class MultiAgentTableWrapper(BaseWrapper):
         return anomaly
 
     def _update_red_info(self, obs):
+        original_obs = deepcopy(obs)
         action = self.get_last_action(agent="Red")
         name = action.__class__.__name__
         if name == "DiscoverRemoteSystems":
             self._add_ips(obs)
         elif name == "DiscoverNetworkServices":
-            ip = str(obs.popitem()[1]["Interface"][0]["IP Address"])
-            self.red_info[ip][3] = True
+            try:
+                ip = str(obs.popitem()[1]["Interface"][0]["IP Address"])
+            except TypeError as e:
+                obs["Success"] = False
+                # print(
+                #     f"Encountered a TypeError when trying to get IP address for DiscoverRemoteSystems action."
+                # )
+                return
+            try:
+                self.red_info[ip][3] = True
+            except Exception as e:
+                print(
+                    f"Encountered an error when trying to update red_info for DiscoverNetwork Services on {ip}.\n"
+                    f"Original observation: {original_obs}\n"
+                    f"red_info: {self.red_info}\n"
+                    f"Error: {e}"
+                )
+                obs["Success"] = False
         elif name == "ExploitRemoteService":
             self._process_exploit(obs)
         elif name == "PrivilegeEscalate":
@@ -514,34 +529,82 @@ class MultiAgentTableWrapper(BaseWrapper):
 
     def _process_priv_esc(self, obs, hostname):
         if obs["success"] == False:
-            [info for info in self.red_info.values() if info[2] == hostname][0][
-                4
-            ] = "None"
+            try:
+                for ip_address, info in self.red_info.items():
+                    if info[2] == hostname:
+                        info[4] = "None"
+            except IndexError as e:
+                logging.warning(
+                    f"IndexError in _process_priv_esc when trying to process observation failure. "
+                    f"obs: {obs} "
+                    f"hostname: {hostname} "
+                    f"red_info: {self.red_info}"
+                )
+                return
         else:
-            for hostid in obs:
-                if hostid == "success":
-                    continue
-                host = obs[hostid]
-                ip = host["Interface"][0]["IP Address"]
+            try:
+                for hostid in obs:
+                    if hostid == "success":
+                        continue
+                    host = obs[hostid]
+                    ip = host["Interface"][0]["IP Address"]
 
-                if "Sessions" in host:
-                    access = "Privileged"
-                    self.red_info[str(ip)][4] = access
-                else:
-                    subnet = self._get_subnet(ip)
-                    hostname = self._generate_name("HOST")
+                    if "Sessions" in host:
+                        try:
+                            access = "Privileged"
+                            self.red_info[str(ip)][4] = access
+                        except KeyError as e:
+                            # Sometimes the game observes success when we do not have access to the system!
+                            logging.warning(
+                                f"KeyError in _process_priv_esc when trying to update access. {ip} not in red_info."
+                            )
+                            # Sometimes we get a "success" when it should not be successful!
+                            subnet = str(obs[hostid]["Interface"][0]["Subnet"])
+                            ip = str(ip)
+                            hostname = hostid
+                            scanned = False
+                            access = "None"
+                            self.red_info[str(ip)] = [
+                                subnet,
+                                ip,
+                                hostname,
+                                scanned,
+                                access,
+                            ]
 
-                    if str(ip) not in self.red_info:
-                        self.red_info[str(ip)] = [
-                            subnet,
-                            str(ip),
-                            hostname,
-                            False,
-                            "None",
-                        ]
                     else:
-                        self.red_info[str(ip)][0] = subnet
-                        self.red_info[str(ip)][2] = hostname
+                        subnet = self._get_subnet(ip)
+                        hostname = self._generate_name("HOST")
+
+                        if str(ip) not in self.red_info:
+                            self.red_info[str(ip)] = [
+                                subnet,
+                                str(ip),
+                                hostname,
+                                False,
+                                "None",
+                            ]
+                        else:
+                            self.red_info[str(ip)][0] = subnet
+                            self.red_info[str(ip)][2] = hostname
+            except IndexError as e:
+                if "ip" not in locals():
+                    ip = "an unspecified ip"
+                logging.warning(
+                    f"IndexError in _process_priv_esc when trying to assign access to {ip}."
+                    f"hostname: {hostname}"
+                    f"obs: {obs} "
+                    f"red_info:{self.red_info}"
+                )
+            except KeyError as e:
+                if "ip" not in locals():
+                    ip = "an unspecified ip"
+                logging.warning(
+                    f"KeyError in _process_priv_esc when trying to assign access to {ip}."
+                    f"hostname: {hostname} "
+                    f"obs: {obs} "
+                    f"red_info:{self.red_info}"
+                )
 
     def _create_red_table(self):
         # The table data is all stored inside the ip nodes
@@ -639,6 +702,7 @@ class MultiAgentTableWrapper(BaseWrapper):
         return self.env.get_attr(attribute)
 
     def get_observation(self, agent: str):
+        self.active_agent = agent
         if self.output_mode == "raw":
             obs = self.get_attr("get_observation")(agent)
         elif self.output_mode == "table":
@@ -676,9 +740,11 @@ class MultiAgentChallengeWrapper(Env, BaseWrapper):
         self.env = env
         self.action_spaces = self.env.action_spaces
         self.observation_spaces = self.env.observation_spaces
+        self.agents = self.env.agents
+        self.writer = self.env.writer
         self.reward_threshold = reward_threshold
         self.max_steps = max_steps
-        self.step_counter = None
+        self.step_counter = 0
         self.action_space = self.action_spaces[initial_agent]
         self.observation_space = self.observation_spaces[initial_agent]
 

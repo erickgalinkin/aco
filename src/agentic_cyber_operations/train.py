@@ -1,11 +1,19 @@
 import inspect
-
+import logging
 from tqdm import tqdm
 from CybORG import CybORG
 from wrappers import MultiAgentChallengeWrapper
 
-MAX_STEPS_PER_GAME = 500
+MAX_STEPS_PER_GAME = 2000
 MAX_EPS = 10000
+
+logger = logging.getLogger(__name__)
+logging.basicConfig(
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    level=logging.INFO,
+    filename="./logs/training.log",
+    encoding="utf-8",
+)
 
 
 def run_training_example(scenario="Scenario1b"):
@@ -16,13 +24,15 @@ def run_training_example(scenario="Scenario1b"):
 
     for i in tqdm(range(MAX_EPS), position=0):  # playing multiple games
         rewards = {"Red": 0, "Blue": 0}
-        for j in tqdm(range(MAX_STEPS_PER_GAME), position=1):  # step in 1 game
-            for player in ["Red", "Blue", "Green"]:
+        for j in tqdm(
+            range(MAX_STEPS_PER_GAME), position=1, leave=False
+        ):  # step in 1 game
+            for player in ["Red", "Blue"]:
                 observation = cyborg.get_observation(player)
                 action_space = cyborg.get_action_space(player)
                 action = cyborg.agents[player].get_action(observation, action_space)
                 next_observation, r, terminated, truncated, info = cyborg.step(
-                    agent=player, action=[action]
+                    agent=player, action=action
                 )
                 done = terminated or truncated
                 if player in rewards.keys():

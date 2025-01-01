@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from torch.distributions import MultivariateNormal, Categorical
 
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -33,7 +34,7 @@ class ActorCritic(nn.Module):
         super(ActorCritic, self).__init__()
 
         self.has_continuous_action_space = has_continuous_action_space
-
+        self.state_dim = state_dim
         if has_continuous_action_space:
             self.action_dim = action_dim
             self.action_var = torch.full(
@@ -221,6 +222,11 @@ class PPO:
         else:
             with torch.no_grad():
                 state = torch.FloatTensor(state).to(DEVICE)
+                if state.shape[0] != self.policy_old.state_dim:
+                    # Truncate cases where the state shape gets weird.
+                    if state.shape[0] > self.policy_old.state_dim:
+                        new_state = state[: self.policy_old.state_dim].detach()
+                        state = new_state
                 action, action_logprob, state_val = self.policy_old.act(state)
 
             self.buffer.states.append(state)
