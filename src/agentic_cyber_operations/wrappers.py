@@ -464,17 +464,17 @@ class MultiAgentTableWrapper(BaseWrapper):
                 ip = str(obs.popitem()[1]["Interface"][0]["IP Address"])
             except TypeError as e:
                 obs["Success"] = False
-                # print(
-                #     f"Encountered a TypeError when trying to get IP address for DiscoverRemoteSystems action."
-                # )
+                logging.warning(
+                    f"Encountered a TypeError when trying to get IP address for DiscoverRemoteSystems action."
+                )
                 return
             try:
                 self.red_info[ip][3] = True
             except Exception as e:
-                print(
-                    f"Encountered an error when trying to update red_info for DiscoverNetwork Services on {ip}.\n"
-                    f"Original observation: {original_obs}\n"
-                    f"red_info: {self.red_info}\n"
+                logging.warning(
+                    f"Encountered an error when trying to update red_info for DiscoverNetwork Services on {ip}. "
+                    f"Original observation: {original_obs} "
+                    f"red_info: {self.red_info} "
                     f"Error: {e}"
                 )
                 obs["Success"] = False
