@@ -47,6 +47,13 @@ def run_training_example(scenario="Scenario1b"):
                     cyborg.writer.add_scalar("Episode Length", j, i)
                     break
 
+    if hasattr(cyborg.env, "uuid"):
+        model_subdir = str(cyborg.env.uuid)
+    else:
+        model_subdir = "training_run"
+    cyborg.agents["Red"].model.save(f"./checkpoints/{model_subdir}/red.ckpt")
+    cyborg.agents["Blue"].model.save(f"./checkpoints/{model_subdir}/blue.ckpt")
+
 
 if __name__ == "__main__":
     run_training_example("Scenario1b")
