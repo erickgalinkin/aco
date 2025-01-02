@@ -29,7 +29,7 @@ class RolloutBuffer:
 
 class ActorCritic(nn.Module):
     def __init__(
-        self, state_dim, action_dim, has_continuous_action_space, action_std_init
+        self, state_dim, action_dim, hidden_dim, has_continuous_action_space, action_std_init
     ):
         super(ActorCritic, self).__init__()
 
@@ -43,29 +43,29 @@ class ActorCritic(nn.Module):
         # actor
         if has_continuous_action_space:
             self.actor = nn.Sequential(
-                nn.Linear(state_dim, 64),
+                nn.Linear(state_dim, hidden_dim),
                 nn.Tanh(),
-                nn.Linear(64, 64),
+                nn.Linear(hidden_dim, hidden_dim),
                 nn.Tanh(),
-                nn.Linear(64, action_dim),
+                nn.Linear(hidden_dim, action_dim),
                 nn.Tanh(),
             )
         else:
             self.actor = nn.Sequential(
-                nn.Linear(state_dim, 64),
+                nn.Linear(state_dim, hidden_dim),
                 nn.Tanh(),
-                nn.Linear(64, 64),
+                nn.Linear(hidden_dim, hidden_dim),
                 nn.Tanh(),
-                nn.Linear(64, action_dim),
+                nn.Linear(hidden_dim, action_dim),
                 nn.Softmax(dim=-1),
             )
         # critic
         self.critic = nn.Sequential(
-            nn.Linear(state_dim, 64),
+            nn.Linear(state_dim, hidden_dim),
             nn.Tanh(),
-            nn.Linear(64, 64),
+            nn.Linear(hidden_dim, hidden_dim),
             nn.Tanh(),
-            nn.Linear(64, 1),
+            nn.Linear(hidden_dim, 1),
         )
 
     def set_action_std(self, new_action_std):
@@ -128,6 +128,7 @@ class PPO:
         self,
         state_dim,
         action_dim,
+        hidden_dim=128,
         k_epochs=5,
         lr_actor=0.0002,
         lr_critic=0.0003,
@@ -149,7 +150,7 @@ class PPO:
         self.buffer = RolloutBuffer()
 
         self.policy = ActorCritic(
-            state_dim, action_dim, has_continuous_action_space, action_std_init
+            state_dim, action_dim, hidden_dim, has_continuous_action_space, action_std_init
         ).to(DEVICE)
         self.optimizer = torch.optim.Adam(
             [
@@ -159,7 +160,7 @@ class PPO:
         )
 
         self.policy_old = ActorCritic(
-            state_dim, action_dim, has_continuous_action_space, action_std_init
+            state_dim, action_dim, hidden_dim, has_continuous_action_space, action_std_init
         ).to(DEVICE)
         self.policy_old.load_state_dict(self.policy.state_dict())
 
