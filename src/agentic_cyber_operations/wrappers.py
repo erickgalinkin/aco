@@ -513,6 +513,8 @@ class MultiAgentTableWrapper(BaseWrapper):
         return self._generate_name("SUBNET")
 
     def _process_exploit(self, obs):
+        if obs["Success"] == False:
+            return
         for hostid in obs:
             if hostid == "success":
                 continue
@@ -520,6 +522,10 @@ class MultiAgentTableWrapper(BaseWrapper):
             host = obs[hostid]
             if "Sessions" in host:
                 ip = str(host["Interface"][0]["IP Address"])
+                if ip not in self.red_info.keys():
+                    logging.warning(f"Attempted to process exploit for unknown IP {ip}.")
+                    obs["Success"] = False
+                    return
                 hostname = host["System info"]["Hostname"]
                 session = host["Sessions"][0]
                 access = "Privileged" if "Username" in session else "User"

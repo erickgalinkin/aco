@@ -4,8 +4,8 @@ from tqdm import tqdm
 from CybORG import CybORG
 from wrappers import MultiAgentChallengeWrapper
 
-MAX_STEPS_PER_GAME = 2000
-MAX_EPS = 10000
+MAX_STEPS_PER_GAME = 100
+MAX_EPS = 5000
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(
@@ -22,11 +22,10 @@ def run_training_example(scenario="Scenario1b"):
 
     cyborg = MultiAgentChallengeWrapper(env=CybORG(path, "sim"))
 
-    for i in tqdm(range(MAX_EPS), position=0):  # playing multiple games
+    logging.info(f"Starting training for {scenario}")
+    for i in tqdm(range(MAX_EPS), position=0):
         rewards = {"Red": 0, "Blue": 0}
-        for j in tqdm(
-            range(MAX_STEPS_PER_GAME), position=1, leave=False
-        ):  # step in 1 game
+        for j in tqdm(range(MAX_STEPS_PER_GAME), position=1, leave=False):
             for player in ["Red", "Blue"]:
                 observation = cyborg.get_observation(player)
                 action_space = cyborg.get_action_space(player)
@@ -47,10 +46,13 @@ def run_training_example(scenario="Scenario1b"):
                     cyborg.writer.add_scalar("Episode Length", j, i)
                     break
 
+    logging.info(f"Finished training for {scenario}.")
     if hasattr(cyborg.env, "uuid"):
         model_subdir = str(cyborg.env.uuid)
     else:
         model_subdir = "training_run"
+
+    logging.info(f"Writing models to ./checkpoints/{model_subdir}")
     cyborg.agents["Red"].model.save(f"./checkpoints/{model_subdir}/red.ckpt")
     cyborg.agents["Blue"].model.save(f"./checkpoints/{model_subdir}/blue.ckpt")
 
