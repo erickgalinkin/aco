@@ -1,5 +1,6 @@
 import inspect
 import logging
+from pathlib import Path
 from tqdm import tqdm
 from CybORG import CybORG
 from wrappers import MultiAgentChallengeWrapper
@@ -53,6 +54,8 @@ def run_training_example(scenario="Scenario1b"):
         model_subdir = "training_run"
 
     logging.info(f"Writing models to ./checkpoints/{model_subdir}")
+    model_path = Path(f"./checkpoints/{model_subdir}")
+    model_path.mkdir(parents=True, exist_ok=True)
     cyborg.agents["Red"].model.save(f"./checkpoints/{model_subdir}/red.ckpt")
     cyborg.agents["Blue"].model.save(f"./checkpoints/{model_subdir}/blue.ckpt")
 
