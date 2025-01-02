@@ -523,7 +523,9 @@ class MultiAgentTableWrapper(BaseWrapper):
             if "Sessions" in host:
                 ip = str(host["Interface"][0]["IP Address"])
                 if ip not in self.red_info.keys():
-                    logging.warning(f"Attempted to process exploit for unknown IP {ip}.")
+                    logging.warning(
+                        f"Attempted to process exploit for unknown IP {ip}."
+                    )
                     obs["Success"] = False
                     return
                 hostname = host["System info"]["Hostname"]
