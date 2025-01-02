@@ -29,7 +29,12 @@ class RolloutBuffer:
 
 class ActorCritic(nn.Module):
     def __init__(
-        self, state_dim, action_dim, hidden_dim, has_continuous_action_space, action_std_init
+        self,
+        state_dim,
+        action_dim,
+        hidden_dim,
+        has_continuous_action_space,
+        action_std_init,
     ):
         super(ActorCritic, self).__init__()
 
@@ -150,7 +155,11 @@ class PPO:
         self.buffer = RolloutBuffer()
 
         self.policy = ActorCritic(
-            state_dim, action_dim, hidden_dim, has_continuous_action_space, action_std_init
+            state_dim,
+            action_dim,
+            hidden_dim,
+            has_continuous_action_space,
+            action_std_init,
         ).to(DEVICE)
         self.optimizer = torch.optim.Adam(
             [
@@ -160,7 +169,11 @@ class PPO:
         )
 
         self.policy_old = ActorCritic(
-            state_dim, action_dim, hidden_dim, has_continuous_action_space, action_std_init
+            state_dim,
+            action_dim,
+            hidden_dim,
+            has_continuous_action_space,
+            action_std_init,
         ).to(DEVICE)
         self.policy_old.load_state_dict(self.policy.state_dict())
 
