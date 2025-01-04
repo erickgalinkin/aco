@@ -5,8 +5,8 @@ from tqdm import tqdm
 from CybORG import CybORG
 from wrappers import MultiAgentChallengeWrapper
 
-MAX_STEPS_PER_GAME = 100
-MAX_EPS = 5000
+MAX_STEPS_PER_GAME = 200
+MAX_EPS = 100000
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(
@@ -49,9 +49,9 @@ def run_training_example(scenario="Scenario1b"):
 
     logging.info(f"Finished training for {scenario}.")
     if hasattr(cyborg.env, "uuid"):
-        model_subdir = str(cyborg.env.uuid)
+        model_subdir = f"{cyborg.env.uuid}_{MAX_EPS}_{MAX_STEPS_PER_GAME}"
     else:
-        model_subdir = "training_run"
+        model_subdir = f"training_run_{MAX_EPS}_{MAX_STEPS_PER_GAME}"
 
     logging.info(f"Writing models to ./checkpoints/{model_subdir}")
     model_path = Path(f"./checkpoints/{model_subdir}")
