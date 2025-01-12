@@ -49,7 +49,7 @@ def get_sizes(scenario: str) -> Tuple[int, int, int, int]:
         logger.critical("No valid red action space!")
         raise ValueError("No valid red action space!")
     red_observation_size = len(
-        cyborg.observation_change(observation=cyborg.reset("Red").observation)
+        cyborg.observation_change(observation=cyborg.env.env.reset("Red").observation)
     )
     if isinstance(action_spaces["Blue"], spaces.MultiDiscrete):
         blue_action_size = len(action_spaces["Blue"])
@@ -59,7 +59,7 @@ def get_sizes(scenario: str) -> Tuple[int, int, int, int]:
         logger.critical("No valid blue action space!")
         raise ValueError("No valid blue action space!")
     blue_observation_size = len(
-        cyborg.observation_change(observation=cyborg.reset("Blue").observation)
+        cyborg.observation_change(observation=cyborg.env.env.reset("Blue").observation)
     )
     return (
         red_action_size,
