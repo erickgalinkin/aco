@@ -4,9 +4,10 @@ from pathlib import Path
 from tqdm import tqdm
 from CybORG import CybORG
 from wrappers import MultiAgentChallengeWrapper
+import json
 
 MAX_STEPS_PER_GAME = 200
-MAX_EPS = 100000
+MAX_EPS = 10000
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(
@@ -58,6 +59,14 @@ def run_training_example(scenario="Scenario1b"):
     model_path.mkdir(parents=True, exist_ok=True)
     cyborg.agents["Red"].model.save(f"./checkpoints/{model_subdir}/red.ckpt")
     cyborg.agents["Blue"].model.save(f"./checkpoints/{model_subdir}/blue.ckpt")
+    action_record_path = f"./logs/{model_subdir}_action_record.json"
+    logging.info(f"Writing action record to {action_record_path}")
+    try:
+        with open(action_record_path, "w") as f:
+            json.dump(cyborg.action_record, f)
+    except Exception as e:
+        logging.critical(f"Failed to write action record to {action_record_path}: {e}")
+        print("Failed to write action record!")
 
 
 if __name__ == "__main__":

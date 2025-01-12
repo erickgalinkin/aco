@@ -226,6 +226,7 @@ class MultiAgentTableWrapper(BaseWrapper):
         self.output_mode = output_mode
         self.success = None
         self.baseline = None
+        self.action_record = {"Red": [], "Blue": []}
 
     def reset(self, agent=None, **kwargs):
         self.active_agent = agent
@@ -340,6 +341,7 @@ class MultiAgentTableWrapper(BaseWrapper):
         action = self.get_last_action(agent="Blue")
         if action is not None:
             name = action.__class__.__name__
+            self.action_record["Blue"].append(name)
             hostname = (
                 action.get_params()["hostname"]
                 if name in ("Restore", "Remove")
@@ -457,6 +459,7 @@ class MultiAgentTableWrapper(BaseWrapper):
         original_obs = deepcopy(obs)
         action = self.get_last_action(agent="Red")
         name = action.__class__.__name__
+        self.action_record["Red"].append(name)
         if name == "DiscoverRemoteSystems":
             self._add_ips(obs)
         elif name == "DiscoverNetworkServices":
