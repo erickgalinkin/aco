@@ -47,6 +47,7 @@ def run_training_example(scenario="Scenario1b"):
                     cyborg.writer.add_scalar("Blue Episode Reward", rewards["Blue"], i)
                     cyborg.writer.add_scalar("Episode Length", j, i)
                     break
+        _ = cyborg.reset("Blue")
 
     logging.info(f"Finished training for {scenario}.")
     if hasattr(cyborg.env, "uuid"):
