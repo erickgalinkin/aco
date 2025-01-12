@@ -3,8 +3,10 @@ from models import PPO
 
 
 class RedAgent(BaseAgent):
-    def __init__(self, action_size=None, state_size=None):
+    def __init__(self, action_size=None, state_size=None, model=None):
         self.model = PPO(state_dim=state_size, action_dim=action_size)
+        if model is not None:
+            self.model.load(model)
 
     def get_action(self, observation, action_space):
         action = self.model.select_action(observation)
@@ -15,8 +17,10 @@ class RedAgent(BaseAgent):
 
 
 class BlueAgent(BaseAgent):
-    def __init__(self, action_size=None, state_size=None):
+    def __init__(self, action_size=None, state_size=None, model=None):
         self.model = PPO(state_dim=state_size, action_dim=action_size)
+        if model is not None:
+            self.model.load(model)
 
     def get_action(self, observation, action_space):
         action = self.model.select_action(observation)
