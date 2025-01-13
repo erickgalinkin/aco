@@ -5,6 +5,7 @@ from tqdm import tqdm
 from CybORG import CybORG
 from wrappers import MultiAgentChallengeWrapper
 import json
+from argparse import ArgumentParser
 
 MAX_STEPS_PER_GAME = 200
 MAX_EPS = 10000
@@ -17,8 +18,12 @@ logging.basicConfig(
     encoding="utf-8",
 )
 
+parser = ArgumentParser()
+parser.add_argument("--max_steps", type=int, default=MAX_STEPS_PER_GAME, help="Max steps per game")
+parser.add_argument("--scenario", type=str, default="Scenario1b", help="Scenario name")
 
-def run_training_example(scenario="Scenario1b"):
+
+def run_training_example(scenario="Scenario1b", max_steps=MAX_STEPS_PER_GAME):
     path = str(inspect.getfile(CybORG))
     path = path[:-10] + f"/Shared/Scenarios/{scenario}.yaml"
 
@@ -27,7 +32,7 @@ def run_training_example(scenario="Scenario1b"):
     logging.info(f"Starting training for {scenario}")
     for i in tqdm(range(MAX_EPS), position=0):
         rewards = {"Red": 0, "Blue": 0}
-        for j in tqdm(range(MAX_STEPS_PER_GAME), position=1, leave=False):
+        for j in tqdm(range(max_steps), position=1, leave=False):
             for player in ["Red", "Blue"]:
                 observation = cyborg.get_observation(player)
                 action_space = cyborg.get_action_space(player)
@@ -42,7 +47,7 @@ def run_training_example(scenario="Scenario1b"):
                     cyborg.agents[player].model.buffer.is_terminals.append(done)
 
                 cyborg.agents[player].train(observation)  # training the agent
-                if done or j == MAX_STEPS_PER_GAME - 1:
+                if done or j == max_steps - 1:
                     cyborg.writer.add_scalar("Red Episode Reward", rewards["Red"], i)
                     cyborg.writer.add_scalar("Blue Episode Reward", rewards["Blue"], i)
                     cyborg.writer.add_scalar("Episode Length", j, i)
@@ -51,9 +56,9 @@ def run_training_example(scenario="Scenario1b"):
 
     logging.info(f"Finished training for {scenario}.")
     if hasattr(cyborg.env, "uuid"):
-        model_subdir = f"{cyborg.env.uuid}_{MAX_EPS}_{MAX_STEPS_PER_GAME}"
+        model_subdir = f"{cyborg.env.uuid}_{MAX_EPS}_{max_steps}_{scenario}"
     else:
-        model_subdir = f"training_run_{MAX_EPS}_{MAX_STEPS_PER_GAME}"
+        model_subdir = f"training_run_{MAX_EPS}_{max_steps}_{scenario}"
 
     logging.info(f"Writing models to ./checkpoints/{model_subdir}")
     model_path = Path(f"./checkpoints/{model_subdir}")
@@ -71,4 +76,5 @@ def run_training_example(scenario="Scenario1b"):
 
 
 if __name__ == "__main__":
-    run_training_example("Scenario1b")
+    args = parser.parse_args()
+    run_training_example(scenario=args.scenario, max_steps=args.max_steps)
