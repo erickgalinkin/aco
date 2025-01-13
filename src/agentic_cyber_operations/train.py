@@ -19,7 +19,9 @@ logging.basicConfig(
 )
 
 parser = ArgumentParser()
-parser.add_argument("--max_steps", type=int, default=MAX_STEPS_PER_GAME, help="Max steps per game")
+parser.add_argument(
+    "--max_steps", type=int, default=MAX_STEPS_PER_GAME, help="Max steps per game"
+)
 parser.add_argument("--scenario", type=str, default="Scenario1b", help="Scenario name")
 
 
