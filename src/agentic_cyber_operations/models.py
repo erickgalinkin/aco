@@ -263,7 +263,6 @@ class PPO:
     def update(self):
         if len(self.buffer) < self.batch_size:
             return
-        # logging.info("Training model...")
         # Monte Carlo estimate of returns
         rewards = []
         discounted_reward = 0
