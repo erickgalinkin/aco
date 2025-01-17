@@ -38,7 +38,6 @@ class ActorCritic(nn.Module):
     ):
         super(ActorCritic, self).__init__()
 
-        self.device = DEVICE
         self.has_continuous_action_space = has_continuous_action_space
         self.state_dim = state_dim
         if has_continuous_action_space:
@@ -55,7 +54,7 @@ class ActorCritic(nn.Module):
                 nn.Tanh(),
                 nn.Linear(hidden_dim, action_dim),
                 nn.Tanh(),
-            ).to(DEVICE)
+            )
         else:
             self.actor = nn.Sequential(
                 nn.Linear(state_dim, hidden_dim),
@@ -64,7 +63,7 @@ class ActorCritic(nn.Module):
                 nn.Tanh(),
                 nn.Linear(hidden_dim, action_dim),
                 nn.Softmax(dim=-1),
-            ).to(DEVICE)
+            )
         # critic
         self.critic = nn.Sequential(
             nn.Linear(state_dim, hidden_dim),
@@ -72,7 +71,7 @@ class ActorCritic(nn.Module):
             nn.Linear(hidden_dim, hidden_dim),
             nn.Tanh(),
             nn.Linear(hidden_dim, 1),
-        ).to(DEVICE)
+        )
 
     def set_action_std(self, new_action_std):
         if self.has_continuous_action_space:
@@ -106,11 +105,7 @@ class ActorCritic(nn.Module):
         action_logprob = dist.log_prob(action)
         state_val = self.critic(state)
 
-        return (
-            action.cpu().detach(),
-            action_logprob.cpu().detach(),
-            state_val.cpu().detach(),
-        )
+        return action.detach(), action_logprob.detach(), state_val.detach()
 
     def evaluate(self, state, action):
         if self.has_continuous_action_space:
@@ -149,7 +144,6 @@ class PPO:
         batch_size=64,
     ):
         self.has_continuous_action_space = has_continuous_action_space
-        self.device = DEVICE
 
         if has_continuous_action_space:
             self.action_std = action_std_init
@@ -249,7 +243,7 @@ class PPO:
                     # )
                     # Truncate cases where the state shape gets weird.
                     if state.shape[0] > self.policy_old.state_dim:
-                        new_state = state[: self.policy_old.state_dim].cpu().detach()
+                        new_state = state[: self.policy_old.state_dim].detach()
                         state = new_state
                 action, action_logprob, state_val = self.policy_old.act(state)
 
