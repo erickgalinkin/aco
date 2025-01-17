@@ -7,7 +7,7 @@ from wrappers import MultiAgentChallengeWrapper
 import json
 from argparse import ArgumentParser
 
-MAX_STEPS_PER_GAME = 200
+MAX_STEPS_PER_GAME = 100
 MAX_EPS = 10000
 
 logger = logging.getLogger(__name__)
