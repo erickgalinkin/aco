@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 from torch.distributions import MultivariateNormal, Categorical
 
-DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 
 class RolloutBuffer:
