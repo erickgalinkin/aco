@@ -476,9 +476,6 @@ class MultiAgentTableWrapper(BaseWrapper):
             except Exception as e:
                 logging.warning(
                     f"Encountered an error when trying to update red_info for DiscoverNetwork Services on {ip}. "
-                    f"Original observation: {original_obs} "
-                    f"red_info: {self.red_info} "
-                    f"Error: {e}"
                 )
                 obs["Success"] = False
         elif name == "ExploitRemoteService":
@@ -544,9 +541,6 @@ class MultiAgentTableWrapper(BaseWrapper):
             except IndexError as e:
                 logging.warning(
                     f"IndexError in _process_priv_esc when trying to process observation failure. "
-                    f"obs: {obs} "
-                    f"hostname: {hostname} "
-                    f"red_info: {self.red_info}"
                 )
                 return
         else:
@@ -600,18 +594,12 @@ class MultiAgentTableWrapper(BaseWrapper):
                     ip = "an unspecified ip"
                 logging.warning(
                     f"IndexError in _process_priv_esc when trying to assign access to {ip}."
-                    f"hostname: {hostname}"
-                    f"obs: {obs} "
-                    f"red_info:{self.red_info}"
                 )
             except KeyError as e:
                 if "ip" not in locals():
                     ip = "an unspecified ip"
                 logging.warning(
                     f"KeyError in _process_priv_esc when trying to assign access to {ip}."
-                    f"hostname: {hostname} "
-                    f"obs: {obs} "
-                    f"red_info:{self.red_info}"
                 )
 
     def _create_red_table(self):
@@ -755,6 +743,7 @@ class MultiAgentChallengeWrapper(Env, BaseWrapper):
         self.step_counter = 0
         self.action_space = self.action_spaces[initial_agent]
         self.observation_space = self.observation_spaces[initial_agent]
+        self.action_record = self.env.env.env.action_record
 
     def step(self, agent, action):
         obs, reward, terminated, truncated, info = self.env.step(agent, action)
