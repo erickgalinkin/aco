@@ -75,9 +75,9 @@ def load_agents(
     red_model_path = red_params["model_path"]
     match red_model_path.lower():
         case "bline":
-            red_agent = B_lineAgent()
+            red_agent = B_lineAgent
         case "meander":
-            red_agent = RedMeanderAgent()
+            red_agent = RedMeanderAgent
         case _:
             red_agent = RedAgent(
                 action_size=red_params["action_size"],
