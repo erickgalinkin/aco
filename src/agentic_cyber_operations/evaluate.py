@@ -10,7 +10,7 @@ from gymnasium import spaces
 from typing import Union, Tuple
 from argparse import ArgumentParser
 
-MAX_EPS = 1000
+MAX_EPS = 100
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(
@@ -225,7 +225,7 @@ if __name__ == "__main__":
     if args.scenario is not None:
         scenario = args.scenario
     else:
-        scenario = "Scenario1b"
+        scenario = "Scenario2"
     if args.red_type == "ppo":
         red_model_path = f"{args.model_path}/red.ckpt"
         blue_model_path = f"{args.model_path}/blue.ckpt"
