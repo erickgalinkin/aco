@@ -179,14 +179,6 @@ def evaluate_blue(blue_model_path: str, red_type: str, scenario: str = "Scenario
         "state_size": blue_state_size,
     }
     red_agent, blue_agent = load_agents(red_params, blue_params)
-    if not isinstance(red_agent, RedAgent):
-        msg = (
-            "`evaluate_models` is intended to evaluate trained agents. "
-            "To evaluate bline or meander, use `evaluate_blue`."
-        )
-        logger.critical(msg)
-        print(msg)
-        exit(0)
 
     path = str(inspect.getfile(CybORG))
     path = path[:-10] + f"/Shared/Scenarios/{scenario}.yaml"
