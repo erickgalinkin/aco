@@ -1,6 +1,7 @@
 import inspect
 import logging
 import json
+from pathlib import Path
 from tqdm import tqdm
 from CybORG import CybORG
 from CybORG.Agents import B_lineAgent, RedMeanderAgent
@@ -122,7 +123,7 @@ def evaluate_models(
         print(msg)
         exit(0)
 
-    model_id = blue_model_path.split("_")[0]
+    model_id = blue_model_path.split("/")[-1].split("_")[0]
 
     path = str(inspect.getfile(CybORG))
     path = path[:-10] + f"/Shared/Scenarios/{scenario}.yaml"
@@ -154,6 +155,7 @@ def evaluate_models(
             overall_actions["Red"].append(actions["Red"])
             overall_actions["Blue"].append(actions["Blue"])
         data = {"rewards": overall_rewards, "actions": overall_actions}
+        Path(f"./logs/evaluation/{model_id}/").mkdir(parents=True, exist_ok=True)
         try:
             data_path = (
                 f"./logs/evaluation/{model_id}/{model_id}_{num_steps}_{scenario}.json"
@@ -170,7 +172,7 @@ def evaluate_models(
 def evaluate_blue(blue_model_path: str, red_type: str, scenario: str = "Scenario1b"):
     logging.info(f"Starting evaluation for blue model on {scenario}")
     logging.info(f"red type: {red_type}, blue model: {blue_model_path}")
-    model_id = blue_model_path.split("_")[0]
+    model_id = blue_model_path.split("/")[-1].split("_")[0]
 
     red_action_size, red_state_size, blue_action_size, blue_state_size = get_sizes(
         scenario
@@ -214,6 +216,7 @@ def evaluate_blue(blue_model_path: str, red_type: str, scenario: str = "Scenario
             overall_rewards.append(rewards)
             overall_actions.append(actions)
         data = {"rewards": overall_rewards, "actions": overall_actions}
+        Path(f"./logs/evaluation/{model_id}/").mkdir(parents=True, exist_ok=True)
         try:
             data_path = (
                 f"./logs/evaluation/{model_id}/{red_type}_{num_steps}_{scenario}.json"
