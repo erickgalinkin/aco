@@ -123,7 +123,7 @@ def evaluate_models(
         print(msg)
         exit(0)
 
-    model_id = blue_model_path.split("/")[-1].split("_")[0]
+    model_id = blue_model_path.split("/")[-2].split("_")[0]
 
     path = str(inspect.getfile(CybORG))
     path = path[:-10] + f"/Shared/Scenarios/{scenario}.yaml"
@@ -172,7 +172,7 @@ def evaluate_models(
 def evaluate_blue(blue_model_path: str, red_type: str, scenario: str = "Scenario1b"):
     logging.info(f"Starting evaluation for blue model on {scenario}")
     logging.info(f"red type: {red_type}, blue model: {blue_model_path}")
-    model_id = blue_model_path.split("/")[-1].split("_")[0]
+    model_id = blue_model_path.split("/")[-2].split("_")[0]
 
     red_action_size, red_state_size, blue_action_size, blue_state_size = get_sizes(
         scenario
