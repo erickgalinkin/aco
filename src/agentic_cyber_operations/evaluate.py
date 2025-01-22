@@ -122,6 +122,8 @@ def evaluate_models(
         print(msg)
         exit(0)
 
+    model_id = blue_model_path.split("_")[0]
+
     path = str(inspect.getfile(CybORG))
     path = path[:-10] + f"/Shared/Scenarios/{scenario}.yaml"
 
@@ -153,7 +155,9 @@ def evaluate_models(
             overall_actions["Blue"].append(actions["Blue"])
         data = {"rewards": overall_rewards, "actions": overall_actions}
         try:
-            data_path = f"./logs/{cyborg.env.uuid}_{num_steps}_{scenario}.json"
+            data_path = (
+                f"./logs/evaluation/{model_id}/{model_id}_{num_steps}_{scenario}.json"
+            )
             logging.info(f"Writing data to {data_path}")
             with open(data_path, "w") as f:
                 json.dump(data, f)
@@ -166,6 +170,7 @@ def evaluate_models(
 def evaluate_blue(blue_model_path: str, red_type: str, scenario: str = "Scenario1b"):
     logging.info(f"Starting evaluation for blue model on {scenario}")
     logging.info(f"red type: {red_type}, blue model: {blue_model_path}")
+    model_id = blue_model_path.split("_")[0]
 
     red_action_size, red_state_size, blue_action_size, blue_state_size = get_sizes(
         scenario
@@ -210,7 +215,9 @@ def evaluate_blue(blue_model_path: str, red_type: str, scenario: str = "Scenario
             overall_actions.append(actions)
         data = {"rewards": overall_rewards, "actions": overall_actions}
         try:
-            data_path = f"./logs/{red_type}_{num_steps}_{scenario}.json"
+            data_path = (
+                f"./logs/evaluation/{model_id}/{red_type}_{num_steps}_{scenario}.json"
+            )
             logging.info(f"Writing data to {data_path}")
             with open(data_path, "w") as f:
                 json.dump(data, f)
