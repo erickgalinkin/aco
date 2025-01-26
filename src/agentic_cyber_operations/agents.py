@@ -34,4 +34,3 @@ class BlueAgent(BaseAgent):
 
     def end_episode(self):
         pass
-

@@ -72,6 +72,8 @@ class ActorCritic(nn.Module):
             nn.Tanh(),
             nn.Linear(hidden_dim, 1),
         )
+        self.actor.to(DEVICE)
+        self.critic.to(DEVICE)
 
     def set_action_std(self, new_action_std):
         if self.has_continuous_action_space:
@@ -133,10 +135,10 @@ class PPO:
         self,
         state_dim,
         action_dim,
-        hidden_dim=128,
+        hidden_dim=64,
         k_epochs=5,
-        lr_actor=0.0002,
-        lr_critic=0.0003,
+        lr_actor=0.0001,
+        lr_critic=0.0002,
         gamma=0.99,
         eps_clip=0.2,
         has_continuous_action_space=False,
