@@ -15,6 +15,9 @@ class RedAgent(BaseAgent):
     def train(self, results):
         self.model.update()
 
+    def end(self, results):
+        pass
+
 
 class BlueAgent(BaseAgent):
     def __init__(self, action_size=None, state_size=None, model=None):
@@ -28,3 +31,7 @@ class BlueAgent(BaseAgent):
 
     def train(self, results):
         self.model.update()
+
+    def end_episode(self):
+        pass
+
