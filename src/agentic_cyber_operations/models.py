@@ -58,18 +58,18 @@ class ActorCritic(nn.Module):
         else:
             self.actor = nn.Sequential(
                 nn.Linear(state_dim, hidden_dim),
-                nn.Tanh(),
+                nn.ReLU(),
                 nn.Linear(hidden_dim, hidden_dim),
-                nn.Tanh(),
+                nn.ReLU(),
                 nn.Linear(hidden_dim, action_dim),
                 nn.Softmax(dim=-1),
             )
         # critic
         self.critic = nn.Sequential(
             nn.Linear(state_dim, hidden_dim),
-            nn.Tanh(),
+            nn.ReLU(),
             nn.Linear(hidden_dim, hidden_dim),
-            nn.Tanh(),
+            nn.ReLU(),
             nn.Linear(hidden_dim, 1),
         )
         self.actor.to(DEVICE)
@@ -135,10 +135,10 @@ class PPO:
         self,
         state_dim,
         action_dim,
-        hidden_dim=64,
-        k_epochs=5,
-        lr_actor=0.0001,
-        lr_critic=0.0002,
+        hidden_dim=256,
+        k_epochs=4,
+        lr_actor=0.0003,
+        lr_critic=0.0005,
         gamma=0.99,
         eps_clip=0.2,
         has_continuous_action_space=False,
@@ -239,8 +239,8 @@ class PPO:
             with torch.no_grad():
                 state = torch.FloatTensor(state).to(DEVICE)
                 if state.shape[0] != self.policy_old.state_dim:
-                    # logging.warning(
-                    #     f"State dimension {state.shape[0]} does not match policy dimension {self.policy_old.state_dim}! "
+                    # print(
+                    #     f"State dimension {state.shape} does not match policy dimension {self.policy_old.state_dim}! "
                     #     f"Truncating input."
                     # )
                     # Truncate cases where the state shape gets weird.

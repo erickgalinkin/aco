@@ -10,8 +10,6 @@ from gymnasium import spaces, Env
 from CybORG.Agents.Wrappers.EnumActionWrapper import EnumActionWrapper
 from CybORG.Agents.Wrappers.TrueTableWrapper import TrueTableWrapper
 from CybORG.Agents.Wrappers.BaseWrapper import BaseWrapper
-from CybORG.Agents.Wrappers.FixedFlatWrapper import FixedFlatWrapper
-from CybORG.Agents.Wrappers.IntListToAction import IntListToActionWrapper
 from CybORG.Shared import Results
 from CybORG.Agents.SimpleAgents.GreenAgent import GreenAgent
 from agents import RedAgent, BlueAgent

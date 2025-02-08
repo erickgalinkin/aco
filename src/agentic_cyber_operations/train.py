@@ -22,17 +22,22 @@ parser = ArgumentParser()
 parser.add_argument(
     "--max_steps", type=int, default=MAX_STEPS_PER_GAME, help="Max steps per game"
 )
-parser.add_argument("--scenario", type=str, default="Scenario1b", help="Scenario name")
+parser.add_argument(
+    "--max_eps", type=int, default=MAX_EPS, help="Max episodes per game"
+)
+parser.add_argument("--scenario", type=str, default="Scenario2", help="Scenario name")
 
 
-def run_training_example(scenario="Scenario1b", max_steps=MAX_STEPS_PER_GAME):
+def run_training_example(
+    scenario="Scenario2", max_steps=MAX_STEPS_PER_GAME, max_eps=MAX_EPS
+):
     path = str(inspect.getfile(CybORG))
     path = path[:-10] + f"/Shared/Scenarios/{scenario}.yaml"
 
     cyborg = MultiAgentChallengeWrapper(env=CybORG(path, "sim"))
 
     logging.info(f"Starting training for {scenario}")
-    for i in tqdm(range(MAX_EPS), position=0):
+    for i in tqdm(range(max_eps), position=0):
         rewards = {"Red": 0, "Blue": 0}
         for j in tqdm(range(max_steps), position=1, leave=False):
             for player in ["Red", "Blue"]:
@@ -54,6 +59,7 @@ def run_training_example(scenario="Scenario1b", max_steps=MAX_STEPS_PER_GAME):
                     cyborg.writer.add_scalar("Blue Episode Reward", rewards["Blue"], i)
                     cyborg.writer.add_scalar("Episode Length", j, i)
                     break
+        _ = cyborg.reset("Red")
         _ = cyborg.reset("Blue")
 
     logging.info(f"Finished training for {scenario}.")
@@ -79,4 +85,6 @@ def run_training_example(scenario="Scenario1b", max_steps=MAX_STEPS_PER_GAME):
 
 if __name__ == "__main__":
     args = parser.parse_args()
-    run_training_example(scenario=args.scenario, max_steps=args.max_steps)
+    run_training_example(
+        scenario=args.scenario, max_steps=args.max_steps, max_eps=args.max_eps
+    )
