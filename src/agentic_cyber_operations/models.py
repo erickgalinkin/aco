@@ -238,15 +238,6 @@ class PPO:
         else:
             with torch.no_grad():
                 state = torch.FloatTensor(state).to(DEVICE)
-                if state.shape[0] != self.policy_old.state_dim:
-                    # print(
-                    #     f"State dimension {state.shape} does not match policy dimension {self.policy_old.state_dim}! "
-                    #     f"Truncating input."
-                    # )
-                    # Truncate cases where the state shape gets weird.
-                    if state.shape[0] > self.policy_old.state_dim:
-                        new_state = state[: self.policy_old.state_dim].detach()
-                        state = new_state
                 action, action_logprob, state_val = self.policy_old.act(state)
 
             self.buffer.states.append(state)
