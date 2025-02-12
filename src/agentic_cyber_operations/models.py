@@ -135,15 +135,15 @@ class PPO:
         self,
         state_dim,
         action_dim,
-        hidden_dim=256,
-        k_epochs=4,
-        lr_actor=0.0003,
-        lr_critic=0.0005,
+        hidden_dim=128,
+        k_epochs=5,
+        lr_actor=0.0005,
+        lr_critic=0.0008,
         gamma=0.99,
         eps_clip=0.2,
         has_continuous_action_space=False,
         action_std_init=0.6,
-        batch_size=64,
+        batch_size=32,
     ):
         self.has_continuous_action_space = has_continuous_action_space
 
@@ -224,6 +224,11 @@ class PPO:
         )
 
     def select_action(self, state):
+        if len(state) != self.policy_old.state_dim:
+            if len(state[0]) == self.policy_old.state_dim:
+                state = state[0]
+            else:
+                raise ValueError(f"Expected {self.policy_old.state_dim} dimensions but got a {type(state)} of size {len(state)}!")
         if self.has_continuous_action_space:
             with torch.no_grad():
                 state = torch.FloatTensor(state).to(DEVICE)
