@@ -9,7 +9,7 @@ from argparse import ArgumentParser
 import numpy as np
 
 MAX_STEPS_PER_GAME = 100
-MAX_EPS = 10000
+MAX_EPISODES = 10000
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(
@@ -24,15 +24,20 @@ parser.add_argument(
     "--max_steps", type=int, default=MAX_STEPS_PER_GAME, help="Max steps per game"
 )
 parser.add_argument(
-    "--max_eps", type=int, default=MAX_EPS, help="Max episodes per game"
+    "--max_eps", type=int, default=MAX_EPISODES, help="Max episodes per game"
+)
+parser.add_argument(
+    "--randomize", action="store_true", default=False, help="Randomize steps"
 )
 parser.add_argument("--scenario", type=str, default="Scenario2", help="Scenario name")
 
 
 def run_training_example(
-    scenario="Scenario2", max_steps=MAX_STEPS_PER_GAME, max_eps=MAX_EPS
+    scenario="Scenario2",
+    max_steps=MAX_STEPS_PER_GAME,
+    max_eps=MAX_EPISODES,
+    randomize=False,
 ):
-    randomize = True if max_steps <=0 else False
     path = str(inspect.getfile(CybORG))
     path = path[:-10] + f"/Shared/Scenarios/{scenario}.yaml"
 
@@ -51,7 +56,10 @@ def run_training_example(
                 next_observation, r, terminated, truncated, info = cyborg.step(
                     agent=player, action=action
                 )
-                done = terminated or truncated
+                if j < max_steps:
+                    done = terminated or truncated
+                else:
+                    done = True
                 if player in rewards.keys():
                     rewards[player] += r
                     cyborg.agents[player].model.buffer.rewards.append(r)
@@ -68,9 +76,9 @@ def run_training_example(
 
     logging.info(f"Finished training for {scenario}.")
     if hasattr(cyborg.env, "uuid"):
-        model_subdir = f"{cyborg.env.uuid}_{MAX_EPS}_{max_steps}_{scenario}"
+        model_subdir = f"{cyborg.env.uuid}_{max_eps}_{max_steps}_{scenario}"
     else:
-        model_subdir = f"training_run_{MAX_EPS}_{max_steps}_{scenario}"
+        model_subdir = f"training_run_{max_eps}_{max_steps}_{scenario}"
 
     logging.info(f"Writing models to ./checkpoints/{model_subdir}")
     model_path = Path(f"./checkpoints/{model_subdir}")
@@ -89,6 +97,11 @@ def run_training_example(
 
 if __name__ == "__main__":
     args = parser.parse_args()
+    if args.max_steps <= 0 or args.max_eps <= 0:
+        raise ValueError("Max steps and max_eps must be greater than zero.")
     run_training_example(
-        scenario=args.scenario, max_steps=args.max_steps, max_eps=args.max_eps
+        scenario=args.scenario,
+        max_steps=args.max_steps,
+        max_eps=args.max_eps,
+        randomize=args.randomize,
     )
