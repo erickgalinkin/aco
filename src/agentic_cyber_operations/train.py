@@ -6,6 +6,7 @@ from CybORG import CybORG
 from wrappers import MultiAgentChallengeWrapper
 import json
 from argparse import ArgumentParser
+import numpy as np
 
 MAX_STEPS_PER_GAME = 100
 MAX_EPS = 10000
@@ -31,6 +32,7 @@ parser.add_argument("--scenario", type=str, default="Scenario2", help="Scenario 
 def run_training_example(
     scenario="Scenario2", max_steps=MAX_STEPS_PER_GAME, max_eps=MAX_EPS
 ):
+    randomize = True if max_steps <=0 else False
     path = str(inspect.getfile(CybORG))
     path = path[:-10] + f"/Shared/Scenarios/{scenario}.yaml"
 
@@ -39,6 +41,8 @@ def run_training_example(
     logging.info(f"Starting training for {scenario}")
     for i in tqdm(range(max_eps), position=0):
         rewards = {"Red": 0, "Blue": 0}
+        if randomize:
+            max_steps = np.random.choice([30, 50, 100])
         for j in tqdm(range(max_steps), position=1, leave=False):
             for player in ["Red", "Blue"]:
                 observation = cyborg.get_observation(player)
