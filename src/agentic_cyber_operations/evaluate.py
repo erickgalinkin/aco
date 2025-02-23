@@ -96,7 +96,7 @@ def load_agents(
 
 
 def evaluate_models(
-    red_model_path: str, blue_model_path: str, scenario: str = "Scenario1b"
+    red_model_path: str, blue_model_path: str, scenario: str = "Scenario2"
 ):
     logging.info(f"Starting evaluation for models on {scenario}")
     logging.info(f"red model: {red_model_path}, blue_model: {blue_model_path}")
@@ -169,7 +169,7 @@ def evaluate_models(
             print(msg)
 
 
-def evaluate_blue(blue_model_path: str, red_type: str, scenario: str = "Scenario1b"):
+def evaluate_blue(blue_model_path: str, red_type: str, scenario: str = "Scenario2"):
     logging.info(f"Starting evaluation for blue model on {scenario}")
     logging.info(f"red type: {red_type}, blue model: {blue_model_path}")
     model_id = blue_model_path.split("/")[-2].split("_")[0]
