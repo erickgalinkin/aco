@@ -58,7 +58,7 @@ def run_training_example(
                 next_observation, r, terminated, truncated, info = cyborg.step(
                     agent=player, action=action
                 )
-                if j < max_steps:
+                if j < max_steps - 1:
                     done = terminated or truncated
                 else:
                     done = True
