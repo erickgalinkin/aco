@@ -68,11 +68,14 @@ def run_training_example(
                     cyborg.agents[player].model.buffer.is_terminals.append(done)
 
                 cyborg.agents[player].train(observation)  # training the agent
-                if done:
-                    cyborg.writer.add_scalar("Red Episode Reward", rewards["Red"], i)
-                    cyborg.writer.add_scalar("Blue Episode Reward", rewards["Blue"], i)
-                    cyborg.writer.add_scalar("Episode Length", j, i)
-                    break
+
+            if done:
+                cyborg.writer.add_scalar("Red Episode Reward", rewards["Red"], i)
+                cyborg.writer.add_scalar("Blue Episode Reward", rewards["Blue"], i)
+                cyborg.writer.add_scalar("Episode Length", j, i)
+
+            if done and j < max_steps:
+                break
 
     logging.info(f"Finished training for {scenario}.")
     if hasattr(cyborg.env, "uuid"):

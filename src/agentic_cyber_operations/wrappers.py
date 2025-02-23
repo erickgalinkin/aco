@@ -155,8 +155,6 @@ class MultiAgentGymWrapper(Env, BaseWrapper):
             "Blue": blue_observation_space,
         }
         self.action_spaces = {"Red": red_action_space, "Blue": blue_action_space}
-        self.uuid = str(uuid4())
-        self.writer = SummaryWriter(log_dir=f"./logs/{self.uuid}")
         self.action_space = None
         self.observation_space = None
         self.action = None
@@ -732,7 +730,8 @@ class MultiAgentChallengeWrapper(Env, BaseWrapper):
         self.action_spaces = self.env.action_spaces
         self.observation_spaces = self.env.observation_spaces
         self.agents = self.env.agents
-        self.writer = self.env.writer
+        self.uuid = str(uuid4())
+        self.writer = SummaryWriter(log_dir=f"./logs/{self.uuid}")
         self.reward_threshold = reward_threshold
         self.max_steps = max_steps
         self.step_counter = 0
