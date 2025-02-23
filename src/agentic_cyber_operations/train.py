@@ -45,6 +45,8 @@ def run_training_example(
 
     logging.info(f"Starting training for {scenario}")
     for i in tqdm(range(max_eps), position=0):
+        _ = cyborg.reset("Blue")
+        _ = cyborg.reset("Red")
         rewards = {"Red": 0, "Blue": 0}
         if randomize:
             max_steps = np.random.choice([30, 50, 100])
@@ -66,13 +68,11 @@ def run_training_example(
                     cyborg.agents[player].model.buffer.is_terminals.append(done)
 
                 cyborg.agents[player].train(observation)  # training the agent
-                if done or j == max_steps - 1:
+                if done:
                     cyborg.writer.add_scalar("Red Episode Reward", rewards["Red"], i)
                     cyborg.writer.add_scalar("Blue Episode Reward", rewards["Blue"], i)
                     cyborg.writer.add_scalar("Episode Length", j, i)
                     break
-        _ = cyborg.reset("Red")
-        _ = cyborg.reset("Blue")
 
     logging.info(f"Finished training for {scenario}.")
     if hasattr(cyborg.env, "uuid"):

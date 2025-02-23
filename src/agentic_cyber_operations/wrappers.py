@@ -11,7 +11,6 @@ from CybORG.Agents.Wrappers.EnumActionWrapper import EnumActionWrapper
 from CybORG.Agents.Wrappers.TrueTableWrapper import TrueTableWrapper
 from CybORG.Agents.Wrappers.BaseWrapper import BaseWrapper
 from CybORG.Shared import Results
-from CybORG.Agents.SimpleAgents.GreenAgent import GreenAgent
 from agents import RedAgent, BlueAgent
 from torch.utils.tensorboard import SummaryWriter
 from uuid import uuid4
@@ -145,14 +144,11 @@ class MultiAgentGymWrapper(Env, BaseWrapper):
         self.blue_agent = BlueAgent(
             action_size=blue_action_size, state_size=blue_box_len
         )
-        # Instantiate Green Agent
-        self.green_agent = GreenAgent()
         self.reward_range = (float("-inf"), float("inf"))
         self.metadata = dict()
         self.agents = {
             "Red": self.red_agent,
             "Blue": self.blue_agent,
-            "Green": self.green_agent,
         }
         self.observation_spaces = {
             "Red": red_observation_space,
@@ -248,7 +244,7 @@ class MultiAgentTableWrapper(BaseWrapper):
         elif agent == "Blue":
             return self._create_blue_table(success=None)
         elif agent is None:
-            return self.env.get_table()
+            return self.get_table(agent=self.active_agent)
 
     def observation_change(self, observation, baseline=False):
         if self.active_agent == "Red":
@@ -264,10 +260,11 @@ class MultiAgentTableWrapper(BaseWrapper):
             elif self.output_mode == "vector":
                 obs = self._create_vector(agent="Red")
             elif self.output_mode == "raw":
-                obs = observation
+                obs = deepcopy(observation)
             else:
                 raise NotImplementedError("Invalid output_mode")
             return obs
+
         if self.active_agent == "Blue":
             obs = deepcopy(observation)
             success = obs["success"]
