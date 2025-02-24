@@ -78,9 +78,11 @@ def run_training_example(
                 break
 
     logging.info(f"Finished training for {scenario}.")
-    if hasattr(cyborg.env, "uuid"):
-        model_subdir = f"{cyborg.env.uuid}_{max_eps}_{max_steps}_{scenario}"
+    if hasattr(cyborg, "uuid"):
+        model_subdir = f"{cyborg.uuid}"
     else:
+        if randomize:
+            max_steps = "random"
         model_subdir = f"training_run_{max_eps}_{max_steps}_{scenario}"
 
     logging.info(f"Writing models to ./checkpoints/{model_subdir}")
