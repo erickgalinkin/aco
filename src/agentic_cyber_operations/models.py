@@ -58,18 +58,18 @@ class ActorCritic(nn.Module):
         else:
             self.actor = nn.Sequential(
                 nn.Linear(state_dim, hidden_dim),
-                nn.ReLU(),
+                nn.Tanh(),
                 nn.Linear(hidden_dim, hidden_dim),
-                nn.ReLU(),
+                nn.Tanh(),
                 nn.Linear(hidden_dim, action_dim),
                 nn.Softmax(dim=-1),
             )
         # critic
         self.critic = nn.Sequential(
             nn.Linear(state_dim, hidden_dim),
-            nn.ReLU(),
+            nn.Tanh(),
             nn.Linear(hidden_dim, hidden_dim),
-            nn.ReLU(),
+            nn.Tanh(),
             nn.Linear(hidden_dim, 1),
         )
         self.actor.to(DEVICE)
@@ -135,10 +135,10 @@ class PPO:
         self,
         state_dim,
         action_dim,
-        hidden_dim=64,
-        k_epochs=3,
-        lr_actor=0.0008,
-        lr_critic=0.0010,
+        hidden_dim=128,
+        k_epochs=4,
+        lr_actor=0.0010,
+        lr_critic=0.0015,
         gamma=0.99,
         eps_clip=0.2,
         has_continuous_action_space=False,
