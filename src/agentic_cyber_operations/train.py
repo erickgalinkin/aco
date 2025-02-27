@@ -67,10 +67,10 @@ def run_training_example(
                 if player in rewards.keys():
                     if player == "Red":
                         last_red_reward = r
-                        rewards[player] += (r - last_blue_reward)
+                        rewards[player] += r - last_blue_reward
                     if player == "Blue":
                         last_blue_reward = r
-                        rewards[player] += (r - last_red_reward)
+                        rewards[player] += r - last_red_reward
                     cyborg.agents[player].model.buffer.rewards.append(r)
                     cyborg.agents[player].model.buffer.is_terminals.append(done)
 
