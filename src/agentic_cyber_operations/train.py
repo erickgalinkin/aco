@@ -47,6 +47,8 @@ def run_training_example(
     for i in tqdm(range(max_eps), position=0):
         _ = cyborg.reset("Blue")
         _ = cyborg.reset("Red")
+        last_red_reward = 0
+        last_blue_reward = 0
         rewards = {"Red": 0, "Blue": 0}
         if randomize:
             max_steps = np.random.choice([30, 50, 100])
@@ -63,7 +65,12 @@ def run_training_example(
                 else:
                     done = True
                 if player in rewards.keys():
-                    rewards[player] += r
+                    if player == "Red":
+                        last_red_reward = r
+                        rewards[player] += (r - last_blue_reward)
+                    if player == "Blue":
+                        last_blue_reward = r
+                        rewards[player] += (r - last_red_reward)
                     cyborg.agents[player].model.buffer.rewards.append(r)
                     cyborg.agents[player].model.buffer.is_terminals.append(done)
 
