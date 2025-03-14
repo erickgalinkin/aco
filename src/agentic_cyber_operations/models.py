@@ -135,15 +135,15 @@ class PPO:
         self,
         state_dim,
         action_dim,
-        hidden_dim=128,
+        hidden_dim=64,
         k_epochs=4,
-        lr_actor=0.0010,
-        lr_critic=0.0015,
+        lr_actor=0.0003,
+        lr_critic=0.0005,
         gamma=0.99,
         eps_clip=0.2,
         has_continuous_action_space=False,
         action_std_init=0.6,
-        batch_size=64,
+        batch_size=32,
     ):
         self.has_continuous_action_space = has_continuous_action_space
 
