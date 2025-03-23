@@ -39,12 +39,14 @@ def run_training_example(
     randomize=False,
     red_agent=None,
     blue_agent=None,
-    use_embedding_agents=False
+    use_embedding_agents=False,
 ):
     path = str(inspect.getfile(CybORG))
     path = path[:-10] + f"/Shared/Scenarios/{scenario}.yaml"
 
-    cyborg = MultiAgentChallengeWrapper(env=CybORG(path, "sim"), use_embedding_agents=use_embedding_agents)
+    cyborg = MultiAgentChallengeWrapper(
+        env=CybORG(path, "sim"), use_embedding_agents=use_embedding_agents
+    )
     if red_agent is not None:
         logging.info(f"Loading agent {red_agent}")
         cyborg.agents["Red"] = load_red_agent(load_path=red_agent, scenario=scenario)

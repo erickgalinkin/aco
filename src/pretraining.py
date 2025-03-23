@@ -2,7 +2,7 @@ import inspect
 import logging
 from pathlib import Path
 
-from CybORG.Agents import SleepAgent
+from CybORG.Agents import SleepAgent, B_lineAgent
 from tqdm import tqdm
 from CybORG import CybORG
 from aco.wrappers import MultiAgentChallengeWrapper
@@ -23,6 +23,13 @@ logging.basicConfig(
 
 parser = ArgumentParser()
 parser.add_argument(
+    "--player",
+    type=str,
+    choices=["Red", "Blue"],
+    required=True,
+    help="Red or Blue player pretraining",
+)
+parser.add_argument(
     "--max_steps", type=int, default=MAX_STEPS_PER_GAME, help="Max steps per game"
 )
 parser.add_argument(
@@ -35,6 +42,7 @@ parser.add_argument("--scenario", type=str, default="Scenario2", help="Scenario 
 
 
 def run_training_example(
+    player,
     scenario="Scenario2",
     max_steps=MAX_STEPS_PER_GAME,
     max_eps=MAX_EPISODES,
@@ -43,10 +51,11 @@ def run_training_example(
     path = str(inspect.getfile(CybORG))
     path = path[:-10] + f"/Shared/Scenarios/{scenario}.yaml"
 
-    cyborg = MultiAgentChallengeWrapper(
-        env=CybORG(path, "sim", agents={"Blue": SleepAgent})
-    )
-    player = "Red"
+    if player == "Red":
+        agents = {"Blue": SleepAgent}
+    if player == "Blue":
+        agents = {"Red": B_lineAgent}
+    cyborg = MultiAgentChallengeWrapper(env=CybORG(path, "sim", agents=agents))
 
     logging.info(f"Starting training for {scenario}")
     for i in tqdm(range(max_eps), position=0):
@@ -105,6 +114,7 @@ if __name__ == "__main__":
     if args.max_steps <= 0 or args.max_eps <= 0:
         raise ValueError("Max steps and max_eps must be greater than zero.")
     run_training_example(
+        player=args.player,
         scenario=args.scenario,
         max_steps=args.max_steps,
         max_eps=args.max_eps,
