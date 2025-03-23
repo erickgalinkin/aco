@@ -53,14 +53,17 @@ def run_training_example(
 
     if player == "Red":
         agents = {"Blue": SleepAgent}
-    if player == "Blue":
+    elif player == "Blue":
         agents = {"Red": B_lineAgent}
+    else:
+        raise ValueError("Only 'Red' or 'Blue' player values are supported")
+
     cyborg = MultiAgentChallengeWrapper(env=CybORG(path, "sim", agents=agents))
 
     logging.info(f"Starting training for {scenario}")
     for i in tqdm(range(max_eps), position=0):
-        _ = cyborg.reset("Red")
-        rewards = {"Red": 0}
+        _ = cyborg.reset(player)
+        rewards = {player: 0}
         if randomize:
             max_steps = np.random.choice([30, 50, 100])
         for j in tqdm(range(max_steps), position=1, leave=False):
@@ -81,7 +84,7 @@ def run_training_example(
             cyborg.agents[player].train(observation)  # training the agent
 
             if done:
-                cyborg.writer.add_scalar("Red Episode Reward", rewards["Red"], i)
+                cyborg.writer.add_scalar(f"{player} Episode Reward", rewards[player], i)
                 cyborg.writer.add_scalar("Episode Length", j, i)
 
             if done and j < max_steps:
@@ -98,7 +101,7 @@ def run_training_example(
     logging.info(f"Writing models to ./checkpoints/{model_subdir}")
     model_path = Path(f"./checkpoints/{model_subdir}")
     model_path.mkdir(parents=True, exist_ok=True)
-    cyborg.agents["Red"].model.save(f"./checkpoints/{model_subdir}/red.ckpt")
+    cyborg.agents[player].model.save(f"./checkpoints/{model_subdir}/{player}.ckpt")
     action_record_path = f"./logs/{model_subdir}_action_record.json"
     logging.info(f"Writing action record to {action_record_path}")
     try:
