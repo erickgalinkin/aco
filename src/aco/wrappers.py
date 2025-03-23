@@ -11,7 +11,7 @@ from CybORG.Agents.Wrappers.EnumActionWrapper import EnumActionWrapper
 from CybORG.Agents.Wrappers.TrueTableWrapper import TrueTableWrapper
 from CybORG.Agents.Wrappers.BaseWrapper import BaseWrapper
 from CybORG.Shared import Results
-from agents import RedAgent, BlueAgent
+from aco.agents import RedAgent, BlueAgent
 from torch.utils.tensorboard import SummaryWriter
 from uuid import uuid4
 
