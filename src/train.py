@@ -52,8 +52,10 @@ def run_training_example(
 
     cyborg = MultiAgentChallengeWrapper(env=CybORG(path, "sim"))
     if red_agent is not None:
+        logging.info(f"Loading agent {red_agent}")
         cyborg.agents["Red"] = load_red_agent(load_path=red_agent, scenario=scenario)
     if blue_agent is not None:
+        logging.info(f"Loading agent {blue_agent}")
         cyborg.agents["Blue"] = load_blue_agent(load_path=blue_agent, scenario=scenario)
 
     logging.info(f"Starting training for {scenario}")
