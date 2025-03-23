@@ -9,9 +9,6 @@ import numpy as np
 from aco.agents import load_red_agent, load_blue_agent
 from aco.wrappers import MultiAgentChallengeWrapper
 
-MAX_STEPS_PER_GAME = 100
-MAX_EPISODES = 10000
-
 logger = logging.getLogger(__name__)
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
@@ -21,12 +18,8 @@ logging.basicConfig(
 )
 
 parser = ArgumentParser()
-parser.add_argument(
-    "--max_steps", type=int, default=MAX_STEPS_PER_GAME, help="Max steps per game"
-)
-parser.add_argument(
-    "--max_eps", type=int, default=MAX_EPISODES, help="Max episodes per game"
-)
+parser.add_argument("--max_steps", type=int, default=100, help="Max steps per game")
+parser.add_argument("--max_eps", type=int, default=10000, help="Max episodes per game")
 parser.add_argument(
     "--randomize", action="store_true", default=False, help="Randomize steps"
 )
@@ -41,16 +34,17 @@ parser.add_argument(
 
 def run_training_example(
     scenario="Scenario2",
-    max_steps=MAX_STEPS_PER_GAME,
-    max_eps=MAX_EPISODES,
+    max_steps=100,
+    max_eps=10000,
     randomize=False,
     red_agent=None,
     blue_agent=None,
+    use_embedding_agents=False
 ):
     path = str(inspect.getfile(CybORG))
     path = path[:-10] + f"/Shared/Scenarios/{scenario}.yaml"
 
-    cyborg = MultiAgentChallengeWrapper(env=CybORG(path, "sim"))
+    cyborg = MultiAgentChallengeWrapper(env=CybORG(path, "sim"), use_embedding_agents=use_embedding_agents)
     if red_agent is not None:
         logging.info(f"Loading agent {red_agent}")
         cyborg.agents["Red"] = load_red_agent(load_path=red_agent, scenario=scenario)

@@ -320,3 +320,102 @@ class PPO:
         self.policy.load_state_dict(
             torch.load(checkpoint_path, map_location=lambda storage, loc: storage)
         )
+
+
+class EmbeddingActorCritic(ActorCritic):
+    def __init__(
+        self,
+        max_input_len,
+        embedding_dim,
+        action_dim,
+        hidden_dim,
+        has_continuous_action_space=False,
+        action_std_init=0.6,
+        freeze_embedding=False,
+    ):
+        super().__init__(
+            embedding_dim,
+            action_dim,
+            hidden_dim,
+            has_continuous_action_space,
+            action_std_init,
+        )
+        # Actor
+        self.actor = nn.Sequential(
+            nn.Embedding(
+                max_input_len,
+                embedding_dim,
+            ),
+            nn.Linear(embedding_dim, hidden_dim),
+            nn.Tanh(),
+            nn.Linear(hidden_dim, hidden_dim),
+            nn.Tanh(),
+            nn.Linear(hidden_dim, action_dim),
+            nn.Softmax(dim=-1),
+        )
+        # Critic
+        self.critic = nn.Sequential(
+            nn.Embedding(
+                max_input_len,
+                embedding_dim,
+            ),
+            nn.Linear(embedding_dim, hidden_dim),
+            nn.Tanh(),
+            nn.Linear(hidden_dim, hidden_dim),
+            nn.Tanh(),
+            nn.Linear(hidden_dim, 1),
+        )
+        self.actor.to(DEVICE)
+        self.critic.to(DEVICE)
+        if freeze_embedding:
+            self.actor[0].requires_grad_(False)
+            self.critic[0].requires_grad_(False)
+
+
+class DynamicStatePPO(PPO):
+    def __init__(
+        self,
+        max_input_len,
+        embedding_dim,
+        action_dim,
+        hidden_dim=64,
+        k_epochs=4,
+        lr_actor=0.0003,
+        lr_critic=0.0005,
+        gamma=0.99,
+        eps_clip=0.2,
+        has_continuous_action_space=False,
+        action_std_init=0.6,
+        batch_size=32,
+    ):
+        super().__init__(
+            embedding_dim,
+            action_dim,
+            hidden_dim,
+            k_epochs,
+            lr_actor,
+            lr_critic,
+            gamma,
+            eps_clip,
+            has_continuous_action_space,
+            action_std_init,
+            batch_size,
+        )
+        self.policy = EmbeddingActorCritic(
+            max_input_len,
+            embedding_dim,
+            action_dim,
+            hidden_dim,
+            has_continuous_action_space,
+            action_std_init,
+        ).to(DEVICE)
+
+        self.policy_old = EmbeddingActorCritic(
+            max_input_len,
+            embedding_dim,
+            action_dim,
+            hidden_dim,
+            has_continuous_action_space,
+            action_std_init,
+        ).to(DEVICE)
+        self.policy_old.load_state_dict(self.policy.state_dict())

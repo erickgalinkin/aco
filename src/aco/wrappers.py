@@ -112,7 +112,7 @@ class MultiAgentGymWrapper(Env, BaseWrapper):
     OpenAI Gym wrapper for running multiple agents simultaneously.
     """
 
-    def __init__(self, env: BaseWrapper = None):
+    def __init__(self, env: BaseWrapper = None, use_embedding_agents=False):
         super().__init__(env)
         # Instantiate Red Agent
         if isinstance(self.get_action_space("Red"), list):
@@ -127,7 +127,11 @@ class MultiAgentGymWrapper(Env, BaseWrapper):
         red_observation_space = spaces.Box(
             -1.0, 1.0, shape=(red_box_len,), dtype=np.float32
         )
-        self.red_agent = RedAgent(action_size=red_action_size, state_size=red_box_len)
+        self.red_agent = RedAgent(
+            action_size=red_action_size,
+            state_size=red_box_len,
+            embedding=use_embedding_agents,
+        )
         # Instantiate Blue Agent
         if isinstance(self.get_action_space("Blue"), list):
             blue_action_space = spaces.MultiDiscrete(self.get_action_space("Blue"))
@@ -142,7 +146,9 @@ class MultiAgentGymWrapper(Env, BaseWrapper):
             -1.0, 1.0, shape=(blue_box_len,), dtype=np.float32
         )
         self.blue_agent = BlueAgent(
-            action_size=blue_action_size, state_size=blue_box_len
+            action_size=blue_action_size,
+            state_size=blue_box_len,
+            embedding=use_embedding_agents,
         )
         self.reward_range = (float("-inf"), float("inf"))
         self.metadata = dict()
