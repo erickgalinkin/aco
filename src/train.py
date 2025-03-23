@@ -58,7 +58,7 @@ def run_training_example(
         logging.info(f"Loading agent {blue_agent}")
         cyborg.agents["Blue"] = load_blue_agent(load_path=blue_agent, scenario=scenario)
 
-    logging.info(f"Starting training for {scenario}")
+    logging.info(f"Starting training for {scenario}, cyborg uuid: {cyborg.uuid}")
     for i in tqdm(range(max_eps), position=0):
         _ = cyborg.reset("Blue")
         _ = cyborg.reset("Red")
