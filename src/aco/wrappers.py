@@ -726,11 +726,11 @@ class MultiAgentTableWrapper(BaseWrapper):
 
 
 class MultiAgentChallengeWrapper(Env, BaseWrapper):
-    def __init__(self, env, reward_threshold=None, max_steps=None, initial_agent="Red"):
+    def __init__(self, env, reward_threshold=None, max_steps=None, initial_agent="Red", use_embedding_agents=False):
         super().__init__(env)
         env = MultiAgentTableWrapper(env, output_mode="vector")
         env = EnumActionWrapper(env)
-        env = MultiAgentGymWrapper(env)
+        env = MultiAgentGymWrapper(env, use_embedding_agents=use_embedding_agents)
 
         self.env = env
         self.action_spaces = self.env.action_spaces
