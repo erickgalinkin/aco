@@ -1,5 +1,5 @@
 from CybORG.Agents.SimpleAgents.BaseAgent import BaseAgent
-from models import PPO
+from aco.models import PPO
 
 
 class RedAgent(BaseAgent):
@@ -39,7 +39,7 @@ class BlueAgent(BaseAgent):
 def load_red_agent(load_path: str, scenario: str):
     if scenario != "Scenario2":
         raise NotImplementedError("load_red_agent only supports Scenario2")
-    red_agent = RedAgent(action_size=4, state_size=4, model=load_path)
+    red_agent = RedAgent(action_size=888, state_size=40, model=load_path)
     return red_agent
 
 
