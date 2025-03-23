@@ -81,14 +81,8 @@ class ActorCritic(nn.Module):
                 (self.action_dim,), new_action_std * new_action_std
             ).to(DEVICE)
         else:
-            print(
-                "--------------------------------------------------------------------------------------------"
-            )
-            print(
+            logging.warning(
                 "WARNING : Calling ActorCritic::set_action_std() on discrete action space policy"
-            )
-            print(
-                "--------------------------------------------------------------------------------------------"
             )
 
     def forward(self):
@@ -188,20 +182,11 @@ class PPO:
             self.policy.set_action_std(new_action_std)
             self.policy_old.set_action_std(new_action_std)
         else:
-            print(
-                "--------------------------------------------------------------------------------------------"
-            )
-            print(
+            logging.warning(
                 "WARNING : Calling PPO::set_action_std() on discrete action space policy"
-            )
-            print(
-                "--------------------------------------------------------------------------------------------"
             )
 
     def decay_action_std(self, action_std_decay_rate, min_action_std):
-        print(
-            "--------------------------------------------------------------------------------------------"
-        )
         if self.has_continuous_action_space:
             self.action_std = self.action_std - action_std_decay_rate
             self.action_std = round(self.action_std, 4)
@@ -216,19 +201,18 @@ class PPO:
             self.set_action_std(self.action_std)
 
         else:
-            print(
+            logging.warning(
                 "WARNING : Calling PPO::decay_action_std() on discrete action space policy"
             )
-        print(
-            "--------------------------------------------------------------------------------------------"
-        )
 
     def select_action(self, state):
         if len(state) != self.policy_old.state_dim:
             if len(state[0]) == self.policy_old.state_dim:
                 state = state[0]
             else:
-                raise ValueError(f"Expected {self.policy_old.state_dim} dimensions but got a {type(state)} of size {len(state)}!")
+                raise ValueError(
+                    f"Expected {self.policy_old.state_dim} dimensions but got a {type(state)} of size {len(state)}!"
+                )
         if self.has_continuous_action_space:
             with torch.no_grad():
                 state = torch.FloatTensor(state).to(DEVICE)

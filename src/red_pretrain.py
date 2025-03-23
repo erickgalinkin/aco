@@ -1,9 +1,11 @@
 import inspect
 import logging
 from pathlib import Path
+
+from CybORG.Agents import SleepAgent
 from tqdm import tqdm
 from CybORG import CybORG
-from wrappers import MultiAgentChallengeWrapper
+from aco.wrappers import MultiAgentChallengeWrapper
 import json
 from argparse import ArgumentParser
 import numpy as np
@@ -41,46 +43,36 @@ def run_training_example(
     path = str(inspect.getfile(CybORG))
     path = path[:-10] + f"/Shared/Scenarios/{scenario}.yaml"
 
-    cyborg = MultiAgentChallengeWrapper(env=CybORG(path, "sim"))
+    cyborg = MultiAgentChallengeWrapper(
+        env=CybORG(path, "sim", agents={"Blue": SleepAgent})
+    )
+    player = "Red"
 
     logging.info(f"Starting training for {scenario}")
     for i in tqdm(range(max_eps), position=0):
-        _ = cyborg.reset("Blue")
         _ = cyborg.reset("Red")
-        last_red_reward = 0
-        last_blue_reward = 0
-        rewards = {"Red": 0, "Blue": 0}
+        rewards = {"Red": 0}
         if randomize:
             max_steps = np.random.choice([30, 50, 100])
         for j in tqdm(range(max_steps), position=1, leave=False):
-            for player in ["Red", "Blue"]:
-                observation = cyborg.get_observation(player)
-                action_space = cyborg.get_action_space(player)
-                action = cyborg.agents[player].get_action(observation, action_space)
-                next_observation, r, terminated, truncated, info = cyborg.step(
-                    agent=player, action=action
-                )
-                if j < max_steps - 1:
-                    done = terminated or truncated
-                else:
-                    done = True
-                if player in rewards.keys():
-                    if player == "Red":
-                        last_red_reward = r / 10
-                        r -= last_blue_reward
-                        rewards[player] += r
-                    if player == "Blue":
-                        last_blue_reward = r / 10
-                        r -= last_red_reward
-                        rewards[player] += r
-                    cyborg.agents[player].model.buffer.rewards.append(r)
-                    cyborg.agents[player].model.buffer.is_terminals.append(done)
+            observation = cyborg.get_observation(player)
+            action_space = cyborg.get_action_space(player)
+            action = cyborg.agents[player].get_action(observation, action_space)
+            next_observation, r, terminated, truncated, info = cyborg.step(
+                agent=player, action=action
+            )
+            if j < max_steps - 1:
+                done = terminated or truncated
+            else:
+                done = True
+            rewards[player] += r
+            cyborg.agents[player].model.buffer.rewards.append(r)
+            cyborg.agents[player].model.buffer.is_terminals.append(done)
 
-                cyborg.agents[player].train(observation)  # training the agent
+            cyborg.agents[player].train(observation)  # training the agent
 
             if done:
                 cyborg.writer.add_scalar("Red Episode Reward", rewards["Red"], i)
-                cyborg.writer.add_scalar("Blue Episode Reward", rewards["Blue"], i)
                 cyborg.writer.add_scalar("Episode Length", j, i)
 
             if done and j < max_steps:
@@ -98,7 +90,6 @@ def run_training_example(
     model_path = Path(f"./checkpoints/{model_subdir}")
     model_path.mkdir(parents=True, exist_ok=True)
     cyborg.agents["Red"].model.save(f"./checkpoints/{model_subdir}/red.ckpt")
-    cyborg.agents["Blue"].model.save(f"./checkpoints/{model_subdir}/blue.ckpt")
     action_record_path = f"./logs/{model_subdir}_action_record.json"
     logging.info(f"Writing action record to {action_record_path}")
     try:

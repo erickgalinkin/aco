@@ -34,3 +34,17 @@ class BlueAgent(BaseAgent):
 
     def end_episode(self):
         pass
+
+
+def load_red_agent(load_path: str, scenario: str):
+    if scenario != "Scenario2":
+        raise NotImplementedError("load_red_agent only supports Scenario2")
+    red_agent = RedAgent(action_size=4, state_size=4, model=load_path)
+    return red_agent
+
+
+def load_blue_agent(load_path: str, scenario: str):
+    if scenario != "Scenario2":
+        raise NotImplementedError("load_blue_agent only supports Scenario2")
+    blue_agent = BlueAgent(action_size=145, state_size=52, model=load_path)
+    return blue_agent

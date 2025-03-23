@@ -15,7 +15,7 @@ from CybORG.Agents.Wrappers.FixedFlatWrapper import FixedFlatWrapper
 from CybORG.Agents.Wrappers.OpenAIGymWrapper import OpenAIGymWrapper
 from CybORG.Agents.Wrappers.ReduceActionSpaceWrapper import ReduceActionSpaceWrapper
 from CybORG.Agents.Wrappers import ChallengeWrapper
-from agents import BlueAgent
+from aco.agents import BlueAgent
 
 MAX_EPS = 100
 agent_name = "Blue"
@@ -87,7 +87,9 @@ if __name__ == "__main__":
                 # cyborg.env.env.tracker.render()
                 for j in range(num_steps):
                     action = agent.get_action(observation, action_space)
-                    observation, rew, done, truncated, info = wrapped_cyborg.step(action)
+                    observation, rew, done, truncated, info = wrapped_cyborg.step(
+                        action
+                    )
                     # result = cyborg.step(agent_name, action)
                     r.append(rew)
                     # r.append(result.reward)
