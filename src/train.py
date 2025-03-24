@@ -91,7 +91,7 @@ def run_training_example(
                 next_observation, r, terminated, truncated, info = cyborg.step(
                     agent=player, action=action
                 )
-                if j < max_steps:
+                if j < max_steps - 1:
                     done = terminated or truncated
                 else:
                     done = True
@@ -114,7 +114,7 @@ def run_training_example(
             if done:
                 cyborg.writer.add_scalar("Red Episode Reward", rewards["Red"], i)
                 cyborg.writer.add_scalar("Blue Episode Reward", rewards["Blue"], i)
-                cyborg.writer.add_scalar("Episode Length", j, i)
+                cyborg.writer.add_scalar("Episode Length", j + 1, i)
 
             if done and j < max_steps:
                 break
