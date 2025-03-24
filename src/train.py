@@ -10,11 +10,12 @@ from aco.agents import load_red_agent, load_blue_agent
 from aco.wrappers import MultiAgentChallengeWrapper
 
 logger = logging.getLogger(__name__)
+handler = logging.FileHandler("./logs/training.log")
+
 logging.basicConfig(
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    level=logging.INFO,
-    filename="./logs/training.log",
+    level=logging.DEBUG,
     encoding="utf-8",
+    handlers=[handler],
 )
 
 parser = ArgumentParser()
@@ -53,6 +54,12 @@ def run_training_example(
 
     cyborg = MultiAgentChallengeWrapper(
         env=CybORG(path, "sim"), use_embedding_agents=use_embedding_agents
+    )
+    # Tweak the formatter
+    handler.setFormatter(
+        logging.Formatter(
+            f"{cyborg.uuid}: " "%(asctime)s - %(levelname)s - %(message)s"
+        )
     )
     if red_agent is not None:
         logging.info(f"Loading agent {red_agent}")

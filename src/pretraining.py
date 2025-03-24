@@ -14,11 +14,12 @@ MAX_STEPS_PER_GAME = 100
 MAX_EPISODES = 10000
 
 logger = logging.getLogger(__name__)
+handler = logging.FileHandler("./logs/training.log")
+
 logging.basicConfig(
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    level=logging.INFO,
-    filename="./logs/training.log",
+    level=logging.DEBUG,
     encoding="utf-8",
+    handlers=[handler],
 )
 
 parser = ArgumentParser()
@@ -59,6 +60,13 @@ def run_training_example(
         raise ValueError("Only 'Red' or 'Blue' player values are supported")
 
     cyborg = MultiAgentChallengeWrapper(env=CybORG(path, "sim", agents=agents))
+
+    # Tweak the formatter
+    handler.setFormatter(
+        logging.Formatter(
+            f"{cyborg.uuid}: " "%(asctime)s - %(levelname)s - %(message)s"
+        )
+    )
 
     msg = f"Starting {player} player pretraining for {scenario}. cyborg uuid: {cyborg.uuid}"
     print(msg)

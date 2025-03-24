@@ -175,6 +175,7 @@ class PPO:
 
         self.MseLoss = nn.MSELoss()
         self.batch_size = batch_size
+        logging.info(f"Initialized PPO on {DEVICE}")
 
     def set_action_std(self, new_action_std):
         if self.has_continuous_action_space:
@@ -419,3 +420,4 @@ class DynamicStatePPO(PPO):
             action_std_init,
         ).to(DEVICE)
         self.policy_old.load_state_dict(self.policy.state_dict())
+        logging.info(f"Initialized DynamicStatePPO on {DEVICE}")
