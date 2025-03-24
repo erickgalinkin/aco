@@ -60,7 +60,7 @@ def run_training_example(
 
     cyborg = MultiAgentChallengeWrapper(env=CybORG(path, "sim", agents=agents))
 
-    logging.info(f"Starting training for {scenario}")
+    logging.info(f"Starting {player} player pretraining for {scenario}")
     for i in tqdm(range(max_eps), position=0):
         _ = cyborg.reset(player)
         rewards = {player: 0}
