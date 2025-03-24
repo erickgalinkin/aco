@@ -30,6 +30,12 @@ parser.add_argument(
 parser.add_argument(
     "--blue_agent", type=str, default=None, help="Path (.ckpt) to load blue agent."
 )
+parser.add_argument(
+    "--reduce_rewards",
+    action="store_true",
+    default=False,
+    help="Reduce rewards at each step by a factor of the opponent's reward.",
+)
 
 
 def run_training_example(
@@ -40,6 +46,7 @@ def run_training_example(
     red_agent=None,
     blue_agent=None,
     use_embedding_agents=False,
+    reduce_rewards=False,
 ):
     path = str(inspect.getfile(CybORG))
     path = path[:-10] + f"/Shared/Scenarios/{scenario}.yaml"
@@ -77,12 +84,14 @@ def run_training_example(
                     done = True
                 if player in rewards.keys():
                     if player == "Red":
-                        last_red_reward = r / 10
-                        r -= last_blue_reward
+                        if reduce_rewards:
+                            last_red_reward = r / 10
+                            r -= last_blue_reward
                         rewards[player] += r
                     if player == "Blue":
-                        last_blue_reward = r / 10
-                        r -= last_red_reward
+                        if reduce_rewards:
+                            last_blue_reward = r / 10
+                            r -= last_red_reward
                         rewards[player] += r
                     cyborg.agents[player].model.buffer.rewards.append(r)
                     cyborg.agents[player].model.buffer.is_terminals.append(done)
@@ -131,4 +140,5 @@ if __name__ == "__main__":
         randomize=args.randomize,
         red_agent=args.red_agent,
         blue_agent=args.blue_agent,
+        reduce_rewards=args.reduce_rewards,
     )
