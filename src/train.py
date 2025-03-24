@@ -61,7 +61,12 @@ def run_training_example(
         logging.info(f"Loading agent {blue_agent}")
         cyborg.agents["Blue"] = load_blue_agent(load_path=blue_agent, scenario=scenario)
 
-    logging.info(f"Starting training for {scenario}, cyborg uuid: {cyborg.uuid}")
+    param_groups = cyborg.agents["Red"].model.optimizer.param_groups
+    actor_lr = param_groups[0]["lr"]
+    critic_lr = param_groups[1]["lr"]
+    logging.info(
+        f"Starting training for {scenario}, cyborg uuid: {cyborg.uuid}; actor lr: {actor_lr}; critic lr: {critic_lr}"
+    )
     for i in tqdm(range(max_eps), position=0):
         _ = cyborg.reset("Blue")
         _ = cyborg.reset("Red")
