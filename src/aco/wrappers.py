@@ -726,7 +726,14 @@ class MultiAgentTableWrapper(BaseWrapper):
 
 
 class MultiAgentChallengeWrapper(Env, BaseWrapper):
-    def __init__(self, env, reward_threshold=None, max_steps=None, initial_agent="Red", use_embedding_agents=False):
+    def __init__(
+        self,
+        env,
+        reward_threshold=None,
+        max_steps=None,
+        initial_agent="Red",
+        use_embedding_agents=False,
+    ):
         super().__init__(env)
         env = MultiAgentTableWrapper(env, output_mode="vector")
         env = EnumActionWrapper(env)
@@ -746,14 +753,18 @@ class MultiAgentChallengeWrapper(Env, BaseWrapper):
         self.action_record = self.env.env.env.action_record
 
     def step(self, agent, action):
+        self.update_spaces(agent)
         obs, reward, terminated, truncated, info = self.env.step(agent, action)
 
         self.step_counter += 1
-        if self.max_steps is not None and self.step_counter > self.max_steps:
+        if self.max_steps is not None and self.step_counter >= self.max_steps:
             terminated = True
-            truncated = True
 
         return obs, reward, terminated, truncated, info
+
+    def update_spaces(self, agent):
+        self.action_space = self.action_spaces[agent]
+        self.observation_space = self.observation_spaces[agent]
 
     def reset(self, agent, **kwargs):
         self.step_counter = 0
