@@ -1,9 +1,44 @@
 import logging
+import math
 import torch
 import torch.nn as nn
 from torch.distributions import MultivariateNormal, Categorical
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+
+
+class MeanLayer(nn.Module):
+    def __init__(self, dim=None, keepdim=False):
+        super().__init__()
+        self.dim = dim
+        self.keepdim = keepdim
+
+    def forward(self, x):
+        return torch.mean(x, dim=self.dim, keepdim=self.keepdim)
+
+
+class PositionalEncoding(nn.Module):
+
+    def __init__(self, d_model: int, dropout: float = 0.1, max_len: int = 5000):
+        super().__init__()
+        self.dropout = nn.Dropout(p=dropout)
+
+        position = torch.arange(max_len).unsqueeze(1)
+        div_term = torch.exp(
+            torch.arange(0, d_model, 2) * (-math.log(10000.0) / d_model)
+        )
+        pe = torch.zeros(max_len, 1, d_model)
+        pe[:, 0, 0::2] = torch.sin(position * div_term)
+        pe[:, 0, 1::2] = torch.cos(position * div_term)
+        self.register_buffer("pe", pe)
+
+    def forward(self, x):
+        """
+        Arguments:
+            x: Tensor, shape ``[seq_len, batch_size, embedding_dim]``
+        """
+        x = x + self.pe[: x.size(0)]
+        return self.dropout(x)
 
 
 class RolloutBuffer:
@@ -40,8 +75,8 @@ class ActorCritic(nn.Module):
 
         self.has_continuous_action_space = has_continuous_action_space
         self.state_dim = state_dim
+        self.action_dim = action_dim
         if has_continuous_action_space:
-            self.action_dim = action_dim
             self.action_var = torch.full(
                 (action_dim,), action_std_init * action_std_init
             ).to(DEVICE)
@@ -347,6 +382,11 @@ class EmbeddingActorCritic(ActorCritic):
                 max_input_len,
                 embedding_dim,
             ),
+            PositionalEncoding(embedding_dim, max_len=max_input_len),
+            nn.TransformerEncoderLayer(
+                d_model=embedding_dim, nhead=8, dim_feedforward=hidden_dim
+            ),
+            MeanLayer(dim=1),
             nn.Linear(embedding_dim, hidden_dim),
             nn.Tanh(),
             nn.Linear(hidden_dim, hidden_dim),
@@ -360,6 +400,11 @@ class EmbeddingActorCritic(ActorCritic):
                 max_input_len,
                 embedding_dim,
             ),
+            PositionalEncoding(embedding_dim, max_len=max_input_len),
+            nn.TransformerEncoderLayer(
+                d_model=embedding_dim, nhead=8, dim_feedforward=hidden_dim
+            ),
+            MeanLayer(dim=1),
             nn.Linear(embedding_dim, hidden_dim),
             nn.Tanh(),
             nn.Linear(hidden_dim, hidden_dim),
@@ -371,6 +416,26 @@ class EmbeddingActorCritic(ActorCritic):
         if freeze_embedding:
             self.actor[0].requires_grad_(False)
             self.critic[0].requires_grad_(False)
+
+    def act(self, state):
+        action_probs = self.actor(state)
+        dist = Categorical(action_probs)
+
+        action = dist.sample()
+        action_logprob = dist.log_prob(action)
+        state_val = self.critic(state)
+
+        return action.detach(), action_logprob.detach(), state_val.detach()
+
+    def evaluate(self, state, action):
+        action_probs = self.actor(state)
+        dist = Categorical(action_probs)
+
+        action_logprobs = dist.log_prob(action)
+        dist_entropy = dist.entropy()
+        state_values = self.critic(state)
+
+        return action_logprobs, state_values, dist_entropy
 
 
 class DynamicStatePPO(PPO):
@@ -390,7 +455,9 @@ class DynamicStatePPO(PPO):
         batch_size=32,
     ):
         if has_continuous_action_space:
-            raise NotImplementedError("DynamicStatePPO does not support continuous action space")
+            raise NotImplementedError(
+                "DynamicStatePPO does not support continuous action space"
+            )
         super().__init__(
             embedding_dim,
             action_dim,
@@ -426,7 +493,9 @@ class DynamicStatePPO(PPO):
 
     def select_action(self, state):
         with torch.no_grad():
-            state = torch.FloatTensor(state).to(DEVICE)
+            state = torch.reshape(
+                torch.FloatTensor(state).to(DEVICE).long(), (1, len(state))
+            )
             action, action_logprob, state_val = self.policy_old.act(state)
 
         self.buffer.states.append(state)
