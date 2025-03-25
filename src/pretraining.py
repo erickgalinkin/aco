@@ -40,6 +40,9 @@ parser.add_argument(
     "--randomize", action="store_true", default=False, help="Randomize steps"
 )
 parser.add_argument("--scenario", type=str, default="Scenario2", help="Scenario name")
+parser.add_argument(
+    "--embedding_agent", action="store_true", default=False, help="Use embedding agent"
+)
 
 
 def run_training_example(
@@ -48,6 +51,7 @@ def run_training_example(
     max_steps=MAX_STEPS_PER_GAME,
     max_eps=MAX_EPISODES,
     randomize=False,
+    use_embedding_agents=False,
 ):
     path = str(inspect.getfile(CybORG))
     path = path[:-10] + f"/Shared/Scenarios/{scenario}.yaml"
@@ -59,7 +63,10 @@ def run_training_example(
     else:
         raise ValueError("Only 'Red' or 'Blue' player values are supported")
 
-    cyborg = MultiAgentChallengeWrapper(env=CybORG(path, "sim", agents=agents))
+    cyborg = MultiAgentChallengeWrapper(
+        env=CybORG(path, "sim", agents=agents),
+        use_embedding_agents=use_embedding_agents,
+    )
 
     # Tweak the formatter
     handler.setFormatter(
@@ -132,4 +139,5 @@ if __name__ == "__main__":
         max_steps=args.max_steps,
         max_eps=args.max_eps,
         randomize=args.randomize,
+        use_embedding_agents=args.embedding_agent,
     )

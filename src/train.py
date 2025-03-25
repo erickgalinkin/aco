@@ -37,6 +37,9 @@ parser.add_argument(
     default=False,
     help="Reduce rewards at each step by a factor of the opponent's reward.",
 )
+parser.add_argument(
+    "--embedding_agent", action="store_true", default=False, help="Use embedding agent"
+)
 
 
 def run_training_example(
@@ -153,5 +156,6 @@ if __name__ == "__main__":
         randomize=args.randomize,
         red_agent=args.red_agent,
         blue_agent=args.blue_agent,
+        use_embedding_agents=args.embedding_agent,
         reduce_rewards=args.reduce_rewards,
     )
