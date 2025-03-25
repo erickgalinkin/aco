@@ -6,7 +6,7 @@ class RedAgent(BaseAgent):
     def __init__(self, action_size=None, state_size=None, model=None, embedding=False):
         if embedding:
             self.model = DynamicStatePPO(
-                max_input_len=128, embedding_dim=64, action_dim=action_size
+                max_input_len=128, embedding_dim=128, action_dim=action_size
             )
         else:
             self.model = PPO(state_dim=state_size, action_dim=action_size)
@@ -28,7 +28,7 @@ class BlueAgent(BaseAgent):
     def __init__(self, action_size=None, state_size=None, model=None, embedding=False):
         if embedding:
             self.model = DynamicStatePPO(
-                max_input_len=128, embedding_dim=64, action_dim=action_size
+                max_input_len=128, embedding_dim=128, action_dim=action_size
             )
         else:
             self.model = PPO(state_dim=state_size, action_dim=action_size)
