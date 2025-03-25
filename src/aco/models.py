@@ -131,8 +131,8 @@ class PPO:
         action_dim,
         hidden_dim=64,
         k_epochs=4,
-        lr_actor=0.0005,
-        lr_critic=0.0010,
+        lr_actor=0.0003,
+        lr_critic=0.0005,
         gamma=0.99,
         eps_clip=0.2,
         has_continuous_action_space=False,
@@ -381,14 +381,16 @@ class DynamicStatePPO(PPO):
         action_dim,
         hidden_dim=64,
         k_epochs=4,
-        lr_actor=0.0005,
-        lr_critic=0.0010,
+        lr_actor=0.0003,
+        lr_critic=0.0005,
         gamma=0.99,
         eps_clip=0.2,
         has_continuous_action_space=False,
         action_std_init=0.6,
         batch_size=32,
     ):
+        if has_continuous_action_space:
+            raise NotImplementedError("DynamicStatePPO does not support continuous action space")
         super().__init__(
             embedding_dim,
             action_dim,
@@ -421,3 +423,15 @@ class DynamicStatePPO(PPO):
         ).to(DEVICE)
         self.policy_old.load_state_dict(self.policy.state_dict())
         logging.info(f"Initialized DynamicStatePPO on {DEVICE}")
+
+    def select_action(self, state):
+        with torch.no_grad():
+            state = torch.FloatTensor(state).to(DEVICE)
+            action, action_logprob, state_val = self.policy_old.act(state)
+
+        self.buffer.states.append(state)
+        self.buffer.actions.append(action)
+        self.buffer.logprobs.append(action_logprob)
+        self.buffer.state_values.append(state_val)
+
+        return action.item()
