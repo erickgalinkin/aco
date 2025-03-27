@@ -146,10 +146,10 @@ class PPO:
         action_dim,
         hidden_dim=64,
         k_epochs=4,
-        lr_actor=0.0003,
-        lr_critic=0.0005,
+        lr_actor=0.0001,
+        lr_critic=0.0003,
         gamma=0.99,
-        eps_clip=0.2,
+        eps_clip=0.1,
         has_continuous_action_space=False,
         action_std_init=0.6,
         batch_size=32,
@@ -364,7 +364,7 @@ class EmbeddingActorCritic(ActorCritic):
             nn.TransformerEncoderLayer(
                 d_model=embedding_dim, nhead=8, dim_feedforward=hidden_dim
             ),
-            nn.Flatten(0),
+            nn.Flatten(),
             nn.Linear(max_input_len * embedding_dim, hidden_dim),
             nn.Tanh(),
             nn.Linear(hidden_dim, hidden_dim),
@@ -381,7 +381,7 @@ class EmbeddingActorCritic(ActorCritic):
             nn.TransformerEncoderLayer(
                 d_model=embedding_dim, nhead=8, dim_feedforward=hidden_dim
             ),
-            nn.Flatten(0),
+            nn.Flatten(),
             nn.Linear(max_input_len * embedding_dim, hidden_dim),
             nn.Tanh(),
             nn.Linear(hidden_dim, hidden_dim),
