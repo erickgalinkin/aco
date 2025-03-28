@@ -84,6 +84,7 @@ def run_training_example(
         last_red_reward = 0
         last_blue_reward = 0
         rewards = {"Red": 0, "Blue": 0}
+        losses = {"Red": list(), "Blue": list()}
         if randomize:
             max_steps = np.random.choice([30, 50, 100])
         for j in tqdm(range(max_steps), position=1, leave=False):
@@ -101,22 +102,30 @@ def run_training_example(
                 if player in rewards.keys():
                     if player == "Red":
                         if reduce_rewards:
-                            last_red_reward = r / 10
+                            last_red_reward = r
                             r -= last_blue_reward
                         rewards[player] += r
                     if player == "Blue":
                         if reduce_rewards:
-                            last_blue_reward = r / 10
+                            last_blue_reward = r
                             r -= last_red_reward
                         rewards[player] += r
                     cyborg.agents[player].model.buffer.rewards.append(r)
                     cyborg.agents[player].model.buffer.is_terminals.append(done)
 
-                cyborg.agents[player].train(observation)  # training the agent
+                mean_loss = cyborg.agents[player].train(observation)
+                if mean_loss is not None:
+                    losses[player].append(mean_loss)
 
             if done:
                 cyborg.writer.add_scalar("Red Episode Reward", rewards["Red"], i)
                 cyborg.writer.add_scalar("Blue Episode Reward", rewards["Blue"], i)
+                cyborg.writer.add_scalar(
+                    "Red Episode Mean Loss", np.mean(losses["Red"]), i
+                )
+                cyborg.writer.add_scalar(
+                    "Blue Episode Mean Loss", np.mean(losses["Blue"]), i
+                )
                 cyborg.writer.add_scalar("Episode Length", j + 1, i)
 
             if done and j < max_steps:

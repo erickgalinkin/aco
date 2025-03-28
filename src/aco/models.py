@@ -1,7 +1,7 @@
 import logging
-import math
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from torch.distributions import MultivariateNormal, Categorical
 import numpy as np
 
@@ -46,8 +46,8 @@ class ActorCritic(nn.Module):
     def __init__(
         self,
         state_dim,
-        action_dim,
         hidden_dim,
+        action_dim,
         has_continuous_action_space,
         action_std_init,
     ):
@@ -288,6 +288,7 @@ class PPO:
         # calculate advantages
         advantages = rewards.detach() - old_state_values.detach()
 
+        mean_loss = 0
         # Optimize policy for K epochs
         for _ in range(self.k_epochs):
             # Evaluating old actions and values
@@ -313,6 +314,7 @@ class PPO:
                 + 0.5 * self.MseLoss(state_values, rewards)
                 - 0.01 * dist_entropy
             )
+            mean_loss += loss.mean().detach().cpu().numpy().item()
 
             # take gradient step
             self.optimizer.zero_grad()
@@ -324,6 +326,8 @@ class PPO:
 
         # clear buffer
         self.buffer.clear()
+
+        return mean_loss
 
     def save(self, checkpoint_path):
         torch.save(self.policy_old.state_dict(), checkpoint_path)
@@ -337,62 +341,73 @@ class PPO:
         )
 
 
-class EmbeddingActorCritic(ActorCritic):
+class PaddedActor(nn.Module):
     def __init__(
         self,
         max_input_len,
-        embedding_dim,
-        action_dim,
         hidden_dim,
+        action_dim,
+    ):
+        super().__init__()
+        self.input_layer = nn.Linear(max_input_len, hidden_dim)
+        self.fc = nn.Linear(hidden_dim, hidden_dim)
+        self.output_layer = nn.Linear(hidden_dim, action_dim)
+        self.action_dim = action_dim
+        self.hidden_dim = hidden_dim
+        self.max_input_len = max_input_len
+
+    def forward(self, x):
+        x = F.tanh(self.input_layer(x))
+        x = F.tanh(self.fc(x))
+        x = F.tanh(self.fc(x))
+        x = F.softmax(self.output_layer(x), -1)
+        return x.squeeze()
+
+
+class PaddedCritic(nn.Module):
+    def __init__(
+        self,
+        max_input_len,
+        hidden_dim,
+    ):
+        super().__init__()
+        self.input_layer = nn.Linear(max_input_len, hidden_dim)
+        self.fc = nn.Linear(hidden_dim, hidden_dim)
+        self.output_layer = nn.Linear(hidden_dim, 1)
+        self.hidden_dim = hidden_dim
+        self.max_input_len = max_input_len
+
+    def forward(self, x):
+        x = F.tanh(self.input_layer(x))
+        x = F.tanh(self.fc(x))
+        x = F.tanh(self.fc(x))
+        x = self.output_layer(x)
+        return x.squeeze()
+
+
+class PaddedActorCritic(ActorCritic):
+    def __init__(
+        self,
+        max_input_len,
+        hidden_dim,
+        action_dim,
         has_continuous_action_space=False,
         action_std_init=0.6,
-        freeze_embedding=False,
     ):
         super().__init__(
-            embedding_dim,
-            action_dim,
+            max_input_len,
             hidden_dim,
+            action_dim,
             has_continuous_action_space,
             action_std_init,
         )
         # Actor
-        self.actor = nn.Sequential(
-            nn.Embedding(
-                max_input_len,
-                embedding_dim,
-            ),
-            nn.TransformerEncoderLayer(
-                d_model=embedding_dim, nhead=8, dim_feedforward=hidden_dim
-            ),
-            nn.Flatten(),
-            nn.Linear(max_input_len * embedding_dim, hidden_dim),
-            nn.Tanh(),
-            nn.Linear(hidden_dim, hidden_dim),
-            nn.Tanh(),
-            nn.Linear(hidden_dim, action_dim),
-            nn.Softmax(dim=-1),
-        )
+        self.actor = PaddedActor(max_input_len, hidden_dim, action_dim)
         # Critic
-        self.critic = nn.Sequential(
-            nn.Embedding(
-                max_input_len,
-                embedding_dim,
-            ),
-            nn.TransformerEncoderLayer(
-                d_model=embedding_dim, nhead=8, dim_feedforward=hidden_dim
-            ),
-            nn.Flatten(),
-            nn.Linear(max_input_len * embedding_dim, hidden_dim),
-            nn.Tanh(),
-            nn.Linear(hidden_dim, hidden_dim),
-            nn.Tanh(),
-            nn.Linear(hidden_dim, 1),
-        )
+        self.critic = PaddedCritic(max_input_len, hidden_dim)
         self.actor.to(DEVICE)
         self.critic.to(DEVICE)
-        if freeze_embedding:
-            self.actor[0].requires_grad_(False)
-            self.critic[0].requires_grad_(False)
+        self.state_dim = max_input_len
 
     def act(self, state):
         action_probs = self.actor(state)
@@ -419,7 +434,6 @@ class DynamicStatePPO(PPO):
     def __init__(
         self,
         max_input_len,
-        embedding_dim,
         action_dim,
         hidden_dim=64,
         k_epochs=4,
@@ -436,7 +450,7 @@ class DynamicStatePPO(PPO):
                 "DynamicStatePPO does not support continuous action space"
             )
         super().__init__(
-            embedding_dim,
+            max_input_len,
             action_dim,
             hidden_dim,
             k_epochs,
@@ -448,21 +462,19 @@ class DynamicStatePPO(PPO):
             action_std_init,
             batch_size,
         )
+
         self.max_input_len = max_input_len
-        self.policy = EmbeddingActorCritic(
+        self.policy = PaddedActorCritic(
             max_input_len,
-            embedding_dim,
-            action_dim,
             hidden_dim,
+            action_dim,
             has_continuous_action_space,
             action_std_init,
         ).to(DEVICE)
-
-        self.policy_old = EmbeddingActorCritic(
+        self.policy_old = PaddedActorCritic(
             max_input_len,
-            embedding_dim,
-            action_dim,
             hidden_dim,
+            action_dim,
             has_continuous_action_space,
             action_std_init,
         ).to(DEVICE)
@@ -470,9 +482,17 @@ class DynamicStatePPO(PPO):
         logging.info(f"Initialized DynamicStatePPO on {DEVICE}")
 
     def select_action(self, state):
+        state = pad(state, self.max_input_len)
+        if len(state) != self.policy_old.state_dim:
+            if len(state[0]) == self.policy_old.state_dim:
+                state = state[0]
+            else:
+                raise ValueError(
+                    f"Expected {self.policy_old.state_dim} dimensions but got a {type(state)} of size {len(state)}!"
+                )
+
         with torch.no_grad():
-            state = pad(state, self.max_input_len)
-            state = torch.FloatTensor(state).to(DEVICE).long()
+            state = torch.FloatTensor(state).to(DEVICE)
             action, action_logprob, state_val = self.policy_old.act(state)
 
         self.buffer.states.append(state)

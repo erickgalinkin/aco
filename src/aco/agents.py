@@ -5,9 +5,7 @@ from aco.models import PPO, DynamicStatePPO
 class RedAgent(BaseAgent):
     def __init__(self, action_size=None, state_size=None, model=None, embedding=False):
         if embedding:
-            self.model = DynamicStatePPO(
-                max_input_len=128, embedding_dim=128, action_dim=action_size
-            )
+            self.model = DynamicStatePPO(max_input_len=256, action_dim=action_size)
         else:
             self.model = PPO(state_dim=state_size, action_dim=action_size)
         if model is not None:
@@ -18,7 +16,8 @@ class RedAgent(BaseAgent):
         return action
 
     def train(self, results):
-        self.model.update()
+        mean_loss = self.model.update()
+        return mean_loss
 
     def end(self, results):
         pass
@@ -27,9 +26,7 @@ class RedAgent(BaseAgent):
 class BlueAgent(BaseAgent):
     def __init__(self, action_size=None, state_size=None, model=None, embedding=False):
         if embedding:
-            self.model = DynamicStatePPO(
-                max_input_len=128, embedding_dim=128, action_dim=action_size
-            )
+            self.model = DynamicStatePPO(max_input_len=256, action_dim=action_size)
         else:
             self.model = PPO(state_dim=state_size, action_dim=action_size)
         if model is not None:
@@ -40,7 +37,8 @@ class BlueAgent(BaseAgent):
         return action
 
     def train(self, results):
-        self.model.update()
+        mean_loss = self.model.update()
+        return mean_loss
 
     def end_episode(self):
         pass
