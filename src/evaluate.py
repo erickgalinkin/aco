@@ -7,8 +7,8 @@ from tqdm import tqdm
 from CybORG import CybORG
 from CybORG.Agents import B_lineAgent, RedMeanderAgent, SleepAgent
 from CybORG.Agents.Wrappers import ChallengeWrapper
-from wrappers import MultiAgentChallengeWrapper
-from agents import RedAgent, BlueAgent
+from aco.wrappers import MultiAgentChallengeWrapper
+from aco.agents import RedAgent, BlueAgent
 from gymnasium import spaces
 from typing import Union, Tuple
 from argparse import ArgumentParser
