@@ -341,14 +341,17 @@ class PPO:
         )
 
 
-class PaddedActor(nn.Module):
+class ProjectionActor(nn.Module):
     def __init__(
         self,
-        max_input_len,
+        state_dim,
         hidden_dim,
         action_dim,
+        max_input_len=128,
     ):
         super().__init__()
+        self.current_state_dim = state_dim
+        self.projection = nn.Linear(state_dim, max_input_len)
         self.input_layer = nn.Linear(max_input_len, hidden_dim)
         self.fc = nn.Linear(hidden_dim, hidden_dim)
         self.output_layer = nn.Linear(hidden_dim, action_dim)
@@ -357,6 +360,10 @@ class PaddedActor(nn.Module):
         self.max_input_len = max_input_len
 
     def forward(self, x):
+        if x.shape[0] != self.current_state_dim:
+            self.current_state_dim = x.shape[0]
+            self.projection = nn.Linear(self.current_state_dim, self.hidden_dim)
+        x = self.projection(x)
         x = self.input_layer(x)
         x = F.tanh(self.fc(x))
         x = F.tanh(self.fc(x))
@@ -364,13 +371,16 @@ class PaddedActor(nn.Module):
         return x.squeeze()
 
 
-class PaddedCritic(nn.Module):
+class ProjectionCritic(nn.Module):
     def __init__(
         self,
-        max_input_len,
+        state_dim,
         hidden_dim,
+        max_input_len=128,
     ):
         super().__init__()
+        self.current_state_dim = state_dim
+        self.projection = nn.Linear(state_dim, max_input_len)
         self.input_layer = nn.Linear(max_input_len, hidden_dim)
         self.fc = nn.Linear(hidden_dim, hidden_dim)
         self.output_layer = nn.Linear(hidden_dim, 1)
@@ -378,6 +388,10 @@ class PaddedCritic(nn.Module):
         self.max_input_len = max_input_len
 
     def forward(self, x):
+        if x.shape[0] != self.current_state_dim:
+            self.current_state_dim = x.shape[0]
+            self.projection = nn.Linear(self.current_state_dim, self.hidden_dim)
+        x = self.projection(x)
         x = self.input_layer(x)
         x = F.tanh(self.fc(x))
         x = F.tanh(self.fc(x))
@@ -385,29 +399,31 @@ class PaddedCritic(nn.Module):
         return x.squeeze()
 
 
-class PaddedActorCritic(ActorCritic):
+class ProjectionActorCritic(ActorCritic):
     def __init__(
         self,
-        max_input_len,
+        state_dim,
         hidden_dim,
         action_dim,
+        max_input_len=128,
         has_continuous_action_space=False,
         action_std_init=0.6,
     ):
         super().__init__(
-            max_input_len,
+            state_dim,
             hidden_dim,
             action_dim,
             has_continuous_action_space,
             action_std_init,
         )
         # Actor
-        self.actor = PaddedActor(max_input_len, hidden_dim, action_dim)
+        self.actor = ProjectionActor(state_dim, hidden_dim, action_dim, max_input_len)
         # Critic
-        self.critic = PaddedCritic(max_input_len, hidden_dim)
+        self.critic = ProjectionActor(state_dim, hidden_dim, max_input_len)
         self.actor.to(DEVICE)
         self.critic.to(DEVICE)
-        self.state_dim = max_input_len
+        self.state_dim = state_dim
+        self.max_input_len = max_input_len
 
     def act(self, state):
         action_probs = self.actor(state)
@@ -433,8 +449,9 @@ class PaddedActorCritic(ActorCritic):
 class DynamicStatePPO(PPO):
     def __init__(
         self,
-        max_input_len,
+        state_dim,
         action_dim,
+        max_input_len=128,
         hidden_dim=64,
         k_epochs=6,
         lr_actor=0.0005,
@@ -450,7 +467,7 @@ class DynamicStatePPO(PPO):
                 "DynamicStatePPO does not support continuous action space"
             )
         super().__init__(
-            max_input_len,
+            state_dim,
             action_dim,
             hidden_dim,
             k_epochs,
@@ -464,17 +481,19 @@ class DynamicStatePPO(PPO):
         )
 
         self.max_input_len = max_input_len
-        self.policy = PaddedActorCritic(
-            max_input_len,
+        self.policy = ProjectionActorCritic(
+            state_dim,
             hidden_dim,
             action_dim,
+            max_input_len,
             has_continuous_action_space,
             action_std_init,
         ).to(DEVICE)
-        self.policy_old = PaddedActorCritic(
+        self.policy_old = ProjectionActorCritic(
             max_input_len,
             hidden_dim,
             action_dim,
+            max_input_len,
             has_continuous_action_space,
             action_std_init,
         ).to(DEVICE)
@@ -482,15 +501,6 @@ class DynamicStatePPO(PPO):
         logging.info(f"Initialized DynamicStatePPO on {DEVICE}")
 
     def select_action(self, state):
-        state = pad(state, self.max_input_len)
-        if len(state) != self.policy_old.state_dim:
-            if len(state[0]) == self.policy_old.state_dim:
-                state = state[0]
-            else:
-                raise ValueError(
-                    f"Expected {self.policy_old.state_dim} dimensions but got a {type(state)} of size {len(state)}!"
-                )
-
         with torch.no_grad():
             state = torch.FloatTensor(state).to(DEVICE)
             action, action_logprob, state_val = self.policy_old.act(state)
