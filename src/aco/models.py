@@ -130,11 +130,11 @@ class ActorCritic(nn.Module):
             if self.action_dim == 1:
                 action = action.reshape(-1, self.action_dim)
         else:
-            action_probs = self.actor(state)
+            action_probs = self.actor(state.to(DEVICE))
             dist = Categorical(action_probs)
-        action_logprobs = dist.log_prob(action)
+        action_logprobs = dist.log_prob(action.to(DEVICE))
         dist_entropy = dist.entropy()
-        state_values = self.critic(state)
+        state_values = self.critic(state.to(DEVICE))
 
         return action_logprobs, state_values, dist_entropy
 
@@ -360,7 +360,7 @@ class ProjectionActor(nn.Module):
         self.max_input_len = max_input_len
 
     def forward(self, x):
-        if x.shape[0] != self.current_state_dim:
+        if len(x.shape) == 1 and x.shape[0] != self.current_state_dim:
             self.current_state_dim = x.shape[0]
             self.projection = nn.Linear(self.current_state_dim, self.hidden_dim)
         x = self.projection(x)
@@ -388,7 +388,7 @@ class ProjectionCritic(nn.Module):
         self.max_input_len = max_input_len
 
     def forward(self, x):
-        if x.shape[0] != self.current_state_dim:
+        if len(x.shape) == 1 and x.shape[0] != self.current_state_dim:
             self.current_state_dim = x.shape[0]
             self.projection = nn.Linear(self.current_state_dim, self.hidden_dim)
         x = self.projection(x)
