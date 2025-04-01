@@ -357,7 +357,7 @@ class PaddedActor(nn.Module):
         self.max_input_len = max_input_len
 
     def forward(self, x):
-        x = F.tanh(self.input_layer(x))
+        x = self.input_layer(x)
         x = F.tanh(self.fc(x))
         x = F.tanh(self.fc(x))
         x = F.softmax(self.output_layer(x), -1)
@@ -378,7 +378,7 @@ class PaddedCritic(nn.Module):
         self.max_input_len = max_input_len
 
     def forward(self, x):
-        x = F.tanh(self.input_layer(x))
+        x = self.input_layer(x)
         x = F.tanh(self.fc(x))
         x = F.tanh(self.fc(x))
         x = self.output_layer(x)
@@ -436,11 +436,11 @@ class DynamicStatePPO(PPO):
         max_input_len,
         action_dim,
         hidden_dim=64,
-        k_epochs=4,
-        lr_actor=0.0003,
-        lr_critic=0.0005,
-        gamma=0.99,
-        eps_clip=0.2,
+        k_epochs=6,
+        lr_actor=0.0005,
+        lr_critic=0.0008,
+        gamma=0.999,
+        eps_clip=0.3,
         has_continuous_action_space=False,
         action_std_init=0.6,
         batch_size=32,
