@@ -490,7 +490,7 @@ class DynamicStatePPO(PPO):
             action_std_init,
         ).to(DEVICE)
         self.policy_old = ProjectionActorCritic(
-            max_input_len,
+            state_dim,
             hidden_dim,
             action_dim,
             max_input_len,
