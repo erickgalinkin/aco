@@ -364,11 +364,11 @@ class ProjectionActor(nn.Module):
             self.current_state_dim = x.shape[0]
             self.projection = nn.Linear(self.current_state_dim, self.hidden_dim)
         x = self.projection(x)
-        x = self.input_layer(x)
+        x = F.tanh(self.input_layer(x))
         x = F.tanh(self.fc(x))
         x = F.tanh(self.fc(x))
         x = F.softmax(self.output_layer(x), -1)
-        return x.squeeze()
+        return x
 
 
 class ProjectionCritic(nn.Module):
@@ -392,11 +392,11 @@ class ProjectionCritic(nn.Module):
             self.current_state_dim = x.shape[0]
             self.projection = nn.Linear(self.current_state_dim, self.hidden_dim)
         x = self.projection(x)
-        x = self.input_layer(x)
+        x = F.tanh(self.input_layer(x))
         x = F.tanh(self.fc(x))
         x = F.tanh(self.fc(x))
         x = self.output_layer(x)
-        return x.squeeze()
+        return x
 
 
 class ProjectionActorCritic(ActorCritic):
@@ -419,7 +419,7 @@ class ProjectionActorCritic(ActorCritic):
         # Actor
         self.actor = ProjectionActor(state_dim, hidden_dim, action_dim, max_input_len)
         # Critic
-        self.critic = ProjectionActor(state_dim, hidden_dim, max_input_len)
+        self.critic = ProjectionCritic(state_dim, hidden_dim, max_input_len)
         self.actor.to(DEVICE)
         self.critic.to(DEVICE)
         self.state_dim = state_dim
