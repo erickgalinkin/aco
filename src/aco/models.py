@@ -16,7 +16,7 @@ def pad(array, max_len):
     :return: padded array
     """
     diff = max_len - array.shape[0]
-    padding_array = np.array([0] * diff)
+    padding_array = np.array([-1] * diff)
     padded_array = np.hstack([array, padding_array])
     return padded_array
 
@@ -351,8 +351,8 @@ class ProjectionActor(nn.Module):
     ):
         super().__init__()
         self.current_state_dim = state_dim
-        self.projection = nn.Linear(state_dim, max_input_len)
-        self.input_layer = nn.Linear(max_input_len, hidden_dim)
+        self.projection = nn.Linear(max_input_len, hidden_dim)
+        self.input_layer = nn.Linear(hidden_dim, hidden_dim)
         self.fc = nn.Linear(hidden_dim, hidden_dim)
         self.output_layer = nn.Linear(hidden_dim, action_dim)
         self.action_dim = action_dim
@@ -360,12 +360,12 @@ class ProjectionActor(nn.Module):
         self.max_input_len = max_input_len
 
     def forward(self, x):
-        if len(x.shape) == 1 and x.shape[0] != self.current_state_dim:
-            self.current_state_dim = x.shape[0]
-            self.projection = nn.Linear(self.current_state_dim, self.hidden_dim)
+        # if len(x.shape) == 1 and x.shape[0] != self.current_state_dim:
+        #     self.current_state_dim = x.shape[0]
+        #     self.projection = nn.Linear(self.current_state_dim, self.hidden_dim)
         x = self.projection(x)
         x = F.tanh(self.input_layer(x))
-        x = F.tanh(self.fc(x))
+        # x = F.tanh(self.fc(x))
         x = F.tanh(self.fc(x))
         x = F.softmax(self.output_layer(x), -1)
         return x
@@ -380,20 +380,20 @@ class ProjectionCritic(nn.Module):
     ):
         super().__init__()
         self.current_state_dim = state_dim
-        self.projection = nn.Linear(state_dim, max_input_len)
-        self.input_layer = nn.Linear(max_input_len, hidden_dim)
+        self.projection = nn.Linear(max_input_len, max_input_len)
+        self.input_layer = nn.Linear(hidden_dim, hidden_dim)
         self.fc = nn.Linear(hidden_dim, hidden_dim)
         self.output_layer = nn.Linear(hidden_dim, 1)
         self.hidden_dim = hidden_dim
         self.max_input_len = max_input_len
 
     def forward(self, x):
-        if len(x.shape) == 1 and x.shape[0] != self.current_state_dim:
-            self.current_state_dim = x.shape[0]
-            self.projection = nn.Linear(self.current_state_dim, self.hidden_dim)
+        # if len(x.shape) == 1 and x.shape[0] != self.current_state_dim:
+        #     self.current_state_dim = x.shape[0]
+        #     self.projection = nn.Linear(self.current_state_dim, self.hidden_dim)
         x = self.projection(x)
         x = F.tanh(self.input_layer(x))
-        x = F.tanh(self.fc(x))
+        # x = F.tanh(self.fc(x))
         x = F.tanh(self.fc(x))
         x = self.output_layer(x)
         return x
@@ -501,6 +501,7 @@ class DynamicStatePPO(PPO):
         logging.info(f"Initialized DynamicStatePPO on {DEVICE}")
 
     def select_action(self, state):
+        state = pad(state, self.max_input_len)
         with torch.no_grad():
             state = torch.FloatTensor(state).to(DEVICE)
             action, action_logprob, state_val = self.policy_old.act(state)
