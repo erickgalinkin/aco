@@ -351,8 +351,8 @@ class ProjectionActor(nn.Module):
     ):
         super().__init__()
         self.current_state_dim = state_dim
-        self.projection = nn.Linear(max_input_len, hidden_dim)
-        self.input_layer = nn.Linear(hidden_dim, hidden_dim)
+        self.projection = nn.Linear(max_input_len, max_input_len)
+        self.input_layer = nn.Linear(max_input_len, hidden_dim)
         self.fc = nn.Linear(hidden_dim, hidden_dim)
         self.output_layer = nn.Linear(hidden_dim, action_dim)
         self.action_dim = action_dim
@@ -381,7 +381,7 @@ class ProjectionCritic(nn.Module):
         super().__init__()
         self.current_state_dim = state_dim
         self.projection = nn.Linear(max_input_len, max_input_len)
-        self.input_layer = nn.Linear(hidden_dim, hidden_dim)
+        self.input_layer = nn.Linear(max_input_len, hidden_dim)
         self.fc = nn.Linear(hidden_dim, hidden_dim)
         self.output_layer = nn.Linear(hidden_dim, 1)
         self.hidden_dim = hidden_dim
