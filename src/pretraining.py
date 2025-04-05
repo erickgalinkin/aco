@@ -5,6 +5,7 @@ from pathlib import Path
 from CybORG.Agents import SleepAgent, B_lineAgent
 from tqdm import tqdm
 from CybORG import CybORG
+from CybORG.Shared.Actions.Action import InvalidAction
 from aco.wrappers import MultiAgentChallengeWrapper
 import json
 from argparse import ArgumentParser
@@ -91,6 +92,9 @@ def run_training_example(
             next_observation, r, terminated, truncated, info = cyborg.step(
                 agent=player, action=action
             )
+            # Penalize invalid actions
+            if isinstance(cyborg.get_last_action(player), InvalidAction):
+                r = -1.0
             if j < max_steps - 1:
                 done = terminated or truncated
             else:
