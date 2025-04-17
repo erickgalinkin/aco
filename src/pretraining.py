@@ -99,10 +99,10 @@ def run_training_example(
                 if not isinstance(cyborg.get_last_action(player), InvalidAction):
                     valid_action = True
                 else:
-                    cyborg.agents[player].buffer.states.pop()
-                    cyborg.agents[player].buffer.actions.pop()
-                    cyborg.agents[player].buffer.logprobs.pop()
-                    cyborg.agents[player].buffer.state_values.pop()
+                    cyborg.agents[player].model.buffer.states.pop()
+                    cyborg.agents[player].model.buffer.actions.pop()
+                    cyborg.agents[player].model.buffer.logprobs.pop()
+                    cyborg.agents[player].model.buffer.state_values.pop()
             if j < max_steps - 1:
                 done = terminated or truncated
             else:
