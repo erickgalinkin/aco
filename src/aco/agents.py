@@ -3,7 +3,15 @@ from aco.models import PPO, DynamicStatePPO
 
 
 class RedAgent(BaseAgent):
-    def __init__(self, action_size=None, state_size=None, model=None, embedding=False):
+    def __init__(
+        self,
+        action_space,
+        action_size=None,
+        state_size=None,
+        model=None,
+        embedding=False,
+    ):
+        self.action_space = action_space
         if embedding:
             self.model = DynamicStatePPO(
                 state_dim=state_size,
@@ -29,7 +37,15 @@ class RedAgent(BaseAgent):
 
 
 class BlueAgent(BaseAgent):
-    def __init__(self, action_size=None, state_size=None, model=None, embedding=False):
+    def __init__(
+        self,
+        action_space,
+        action_size=None,
+        state_size=None,
+        model=None,
+        embedding=False,
+    ):
+        self.action_space = action_space
         if embedding:
             self.model = DynamicStatePPO(
                 state_dim=state_size,

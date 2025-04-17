@@ -88,13 +88,16 @@ def run_training_example(
         for j in tqdm(range(max_steps), position=1, leave=False):
             observation = cyborg.get_observation(player)
             action_space = cyborg.get_action_space(player)
-            action = cyborg.agents[player].get_action(observation, action_space)
-            next_observation, r, terminated, truncated, info = cyborg.step(
-                agent=player, action=action
-            )
-            # Penalize invalid actions
-            if isinstance(cyborg.get_last_action(player), InvalidAction):
-                r = -1.0
+            valid_action = False
+            attempts = 0
+            while not (valid_action or attempts > 30):
+                action = cyborg.agents[player].get_action(observation, action_space)
+                next_observation, r, terminated, truncated, info = cyborg.step(
+                    agent=player, action=action
+                )
+                if not isinstance(cyborg.get_last_action(player), InvalidAction):
+                    valid_action = True
+                    attempts += 1
             if j < max_steps - 1:
                 done = terminated or truncated
             else:

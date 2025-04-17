@@ -128,6 +128,7 @@ class MultiAgentGymWrapper(Env, BaseWrapper):
             -1.0, 1.0, shape=(red_box_len,), dtype=np.float32
         )
         self.red_agent = RedAgent(
+            action_space=red_action_space,
             action_size=red_action_size,
             state_size=red_box_len,
             embedding=use_embedding_agents,
@@ -146,6 +147,7 @@ class MultiAgentGymWrapper(Env, BaseWrapper):
             -1.0, 1.0, shape=(blue_box_len,), dtype=np.float32
         )
         self.blue_agent = BlueAgent(
+            action_space=blue_action_space,
             action_size=blue_action_size,
             state_size=blue_box_len,
             embedding=use_embedding_agents,
