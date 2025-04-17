@@ -98,7 +98,7 @@ def run_training_example(
                 )
                 if not isinstance(cyborg.get_last_action(player), InvalidAction):
                     valid_action = True
-                else:
+                elif attempts <= 30:
                     cyborg.agents[player].model.buffer.states.pop()
                     cyborg.agents[player].model.buffer.actions.pop()
                     cyborg.agents[player].model.buffer.logprobs.pop()
