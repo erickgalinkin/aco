@@ -95,13 +95,18 @@ def run_training_example(
                 valid_action = False
                 attempts = 0
                 while not (valid_action or attempts > 10):
+                    attempts += 1
                     action = cyborg.agents[player].get_action(observation, action_space)
                     next_observation, r, terminated, truncated, info = cyborg.step(
                         agent=player, action=action
                     )
                     if not isinstance(cyborg.get_last_action(player), InvalidAction):
                         valid_action = True
-                        attempts += 1
+                    else:
+                        cyborg.agents[player].buffer.states.pop()
+                        cyborg.agents[player].buffer.actions.pop()
+                        cyborg.agents[player].buffer.logprobs.pop()
+                        cyborg.agents[player].buffer.state_values.pop()
                 # Penalize invalid actions
                 if isinstance(cyborg.get_last_action(player), InvalidAction):
                     r = -1.0
