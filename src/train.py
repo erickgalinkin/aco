@@ -7,7 +7,7 @@ from CybORG.Shared.Actions.Action import InvalidAction
 import json
 from argparse import ArgumentParser
 import numpy as np
-from aco.agents import load_red_agent, load_blue_agent
+from aco.agents import load_red_agent, load_blue_agent, Cardiff
 from aco.wrappers import MultiAgentChallengeWrapper
 
 logger = logging.getLogger(__name__)
@@ -70,7 +70,12 @@ def run_training_example(
         cyborg.agents["Red"] = load_red_agent(load_path=red_agent, scenario=scenario)
     if blue_agent is not None:
         logging.info(f"Loading agent {blue_agent}")
-        cyborg.agents["Blue"] = load_blue_agent(load_path=blue_agent, scenario=scenario)
+        if blue_agent.lower() == "cardiff":
+            cyborg.agents["Blue"] = Cardiff()
+        else:
+            cyborg.agents["Blue"] = load_blue_agent(
+                load_path=blue_agent, scenario=scenario
+            )
 
     param_groups = cyborg.agents["Red"].model.optimizer.param_groups
     actor_lr = param_groups[0]["lr"]
@@ -125,10 +130,14 @@ def run_training_example(
                             last_blue_reward = r
                             r -= last_red_reward
                         rewards[player] += r
-                    cyborg.agents[player].model.buffer.rewards.append(r)
-                    cyborg.agents[player].model.buffer.is_terminals.append(done)
+                    if blue_agent.lower() != "cardiff" and player == "Blue":
+                        cyborg.agents[player].model.buffer.rewards.append(r)
+                        cyborg.agents[player].model.buffer.is_terminals.append(done)
+                if player == "Blue" and blue_agent.lower() != "cardiff":
+                    mean_loss = cyborg.agents[player].train(observation)
+                else:
+                    mean_loss = 0
 
-                mean_loss = cyborg.agents[player].train(observation)
                 if mean_loss is not None:
                     losses[player].append(mean_loss)
 
@@ -138,10 +147,13 @@ def run_training_example(
                 cyborg.writer.add_scalar(
                     "Red Episode Mean Loss", np.mean(losses["Red"]), i
                 )
-                cyborg.writer.add_scalar(
-                    "Blue Episode Mean Loss", np.mean(losses["Blue"]), i
-                )
+                if blue_agent.lower() != "cardiff":
+                    cyborg.writer.add_scalar(
+                        "Blue Episode Mean Loss", np.mean(losses["Blue"]), i
+                    )
                 cyborg.writer.add_scalar("Episode Length", j + 1, i)
+                if blue_agent.lower() == "cardiff":
+                    cyborg.agents["Blue"].end_episode()
 
             if done and j < max_steps:
                 break
@@ -158,7 +170,8 @@ def run_training_example(
     model_path = Path(f"./checkpoints/{model_subdir}")
     model_path.mkdir(parents=True, exist_ok=True)
     cyborg.agents["Red"].model.save(f"./checkpoints/{model_subdir}/red.ckpt")
-    cyborg.agents["Blue"].model.save(f"./checkpoints/{model_subdir}/blue.ckpt")
+    if blue_agent.lower() != "cardiff":
+        cyborg.agents["Blue"].model.save(f"./checkpoints/{model_subdir}/blue.ckpt")
     action_record_path = f"./logs/{model_subdir}_action_record.json"
     logging.info(f"Writing action record to {action_record_path}")
     try:
