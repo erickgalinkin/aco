@@ -89,16 +89,14 @@ def run_training_example(
             observation = cyborg.get_observation(player)
             action_space = cyborg.get_action_space(player)
             valid_action = False
-            attempts = 0
-            while not (valid_action or attempts > 30):
-                attempts += 1
+            while not valid_action:
                 action = cyborg.agents[player].get_action(observation, action_space)
                 next_observation, r, terminated, truncated, info = cyborg.step(
                     agent=player, action=action
                 )
                 if not isinstance(cyborg.get_last_action(player), InvalidAction):
                     valid_action = True
-                elif attempts <= 30:
+                else:
                     cyborg.agents[player].model.buffer.states.pop()
                     cyborg.agents[player].model.buffer.actions.pop()
                     cyborg.agents[player].model.buffer.logprobs.pop()
