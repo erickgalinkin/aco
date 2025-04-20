@@ -456,7 +456,7 @@ class DynamicStatePPO(PPO):
         k_epochs=5,
         lr_actor=0.001,
         lr_critic=0.0015,
-        gamma=0.999,
+        gamma=0.99,
         eps_clip=0.2,
         has_continuous_action_space=False,
         action_std_init=0.6,
