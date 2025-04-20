@@ -152,7 +152,7 @@ class PPO:
         eps_clip=0.2,
         has_continuous_action_space=False,
         action_std_init=0.6,
-        batch_size=32,
+        batch_size=512,
     ):
         self.has_continuous_action_space = has_continuous_action_space
 
@@ -460,7 +460,7 @@ class DynamicStatePPO(PPO):
         eps_clip=0.2,
         has_continuous_action_space=False,
         action_std_init=0.6,
-        batch_size=32,
+        batch_size=256,
     ):
         if has_continuous_action_space:
             raise NotImplementedError(
