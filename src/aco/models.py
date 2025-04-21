@@ -166,11 +166,11 @@ class PPO:
         self.buffer = RolloutBuffer()
 
         self.policy = ActorCritic(
-            state_dim,
-            action_dim,
-            hidden_dim,
-            has_continuous_action_space,
-            action_std_init,
+            state_dim=state_dim,
+            hidden_dim=hidden_dim,
+            action_dim=action_dim,
+            has_continuous_action_space=has_continuous_action_space,
+            action_std_init=action_std_init,
         ).to(DEVICE)
         self.optimizer = torch.optim.Adam(
             [
@@ -180,11 +180,11 @@ class PPO:
         )
 
         self.policy_old = ActorCritic(
-            state_dim,
-            action_dim,
-            hidden_dim,
-            has_continuous_action_space,
-            action_std_init,
+            state_dim=state_dim,
+            hidden_dim=hidden_dim,
+            action_dim=action_dim,
+            has_continuous_action_space=has_continuous_action_space,
+            action_std_init=action_std_init,
         ).to(DEVICE)
         self.policy_old.load_state_dict(self.policy.state_dict())
 
@@ -410,16 +410,23 @@ class ProjectionActorCritic(ActorCritic):
         action_std_init=0.6,
     ):
         super().__init__(
-            state_dim,
-            hidden_dim,
-            action_dim,
-            has_continuous_action_space,
-            action_std_init,
+            state_dim=state_dim,
+            hidden_dim=hidden_dim,
+            action_dim=action_dim,
+            has_continuous_action_space=has_continuous_action_space,
+            action_std_init=action_std_init,
         )
         # Actor
-        self.actor = ProjectionActor(state_dim, hidden_dim, action_dim, max_input_len)
+        self.actor = ProjectionActor(
+            state_dim=state_dim,
+            hidden_dim=hidden_dim,
+            action_dim=action_dim,
+            max_input_len=max_input_len,
+        )
         # Critic
-        self.critic = ProjectionCritic(state_dim, hidden_dim, max_input_len)
+        self.critic = ProjectionCritic(
+            state_dim=state_dim, hidden_dim=hidden_dim, max_input_len=max_input_len
+        )
         self.actor.to(DEVICE)
         self.critic.to(DEVICE)
         self.state_dim = state_dim
@@ -467,35 +474,35 @@ class DynamicStatePPO(PPO):
                 "DynamicStatePPO does not support continuous action space"
             )
         super().__init__(
-            state_dim,
-            action_dim,
-            hidden_dim,
-            k_epochs,
-            lr_actor,
-            lr_critic,
-            gamma,
-            eps_clip,
-            has_continuous_action_space,
-            action_std_init,
-            batch_size,
+            state_dim=state_dim,
+            action_dim=action_dim,
+            hidden_dim=hidden_dim,
+            k_epochs=k_epochs,
+            lr_actor=lr_actor,
+            lr_critic=lr_critic,
+            gamma=gamma,
+            eps_clip=eps_clip,
+            has_continuous_action_space=has_continuous_action_space,
+            action_std_init=action_std_init,
+            batch_size=batch_size,
         )
 
         self.max_input_len = max_input_len
         self.policy = ProjectionActorCritic(
-            state_dim,
-            hidden_dim,
-            action_dim,
-            max_input_len,
-            has_continuous_action_space,
-            action_std_init,
+            state_dim=state_dim,
+            hidden_dim=hidden_dim,
+            action_dim=action_dim,
+            max_input_len=max_input_len,
+            has_continuous_action_space=has_continuous_action_space,
+            action_std_init=action_std_init,
         ).to(DEVICE)
         self.policy_old = ProjectionActorCritic(
-            state_dim,
-            hidden_dim,
-            action_dim,
-            max_input_len,
-            has_continuous_action_space,
-            action_std_init,
+            state_dim=state_dim,
+            hidden_dim=hidden_dim,
+            action_dim=action_dim,
+            max_input_len=max_input_len,
+            has_continuous_action_space=has_continuous_action_space,
+            action_std_init=action_std_init,
         ).to(DEVICE)
         self.policy_old.load_state_dict(self.policy.state_dict())
         logging.info(f"Initialized DynamicStatePPO on {DEVICE}")
