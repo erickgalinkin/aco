@@ -53,6 +53,7 @@ def run_training_example(
     max_eps=MAX_EPISODES,
     randomize=False,
     use_embedding_agents=False,
+    max_invalid=30,
 ):
     path = str(inspect.getfile(CybORG))
     path = path[:-10] + f"/Shared/Scenarios/{scenario}.yaml"
@@ -89,14 +90,16 @@ def run_training_example(
             observation = cyborg.get_observation(player)
             action_space = cyborg.get_action_space(player)
             valid_action = False
-            while not valid_action:
+            attempts = 0
+            while not (valid_action or attempts > max_invalid):
+                attempts += 1
                 action = cyborg.agents[player].get_action(observation, action_space)
                 next_observation, r, terminated, truncated, info = cyborg.step(
                     agent=player, action=action
                 )
                 if not isinstance(cyborg.get_last_action(player), InvalidAction):
                     valid_action = True
-                else:
+                elif attempts <= max_invalid:
                     cyborg.agents[player].model.buffer.states.pop()
                     cyborg.agents[player].model.buffer.actions.pop()
                     cyborg.agents[player].model.buffer.logprobs.pop()
