@@ -2,7 +2,7 @@ import inspect
 import logging
 from pathlib import Path
 
-from CybORG.Agents import SleepAgent, B_lineAgent
+from CybORG.Agents import SleepAgent, B_lineAgent, BlueReactRestoreAgent
 from tqdm import tqdm
 from CybORG import CybORG
 from CybORG.Shared.Actions.Action import InvalidAction
@@ -59,7 +59,7 @@ def run_training_example(
     path = path[:-10] + f"/Shared/Scenarios/{scenario}.yaml"
 
     if player == "Red":
-        agents = {"Blue": SleepAgent}
+        agents = {"Blue": BlueReactRestoreAgent}
     elif player == "Blue":
         agents = {"Red": B_lineAgent}
     else:
