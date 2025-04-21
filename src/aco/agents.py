@@ -12,7 +12,7 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 class RedAgent(BaseAgent):
     def __init__(
         self,
-        action_space,
+        action_space=None,
         action_size=None,
         state_size=None,
         model=None,
@@ -23,8 +23,6 @@ class RedAgent(BaseAgent):
             self.model = DynamicStatePPO(
                 state_dim=state_size,
                 action_dim=action_size,
-                lr_actor=0.0005,
-                lr_critic=0.0008,
             )
         else:
             self.model = PPO(state_dim=state_size, action_dim=action_size)
@@ -46,7 +44,7 @@ class RedAgent(BaseAgent):
 class BlueAgent(BaseAgent):
     def __init__(
         self,
-        action_space,
+        action_space=None,
         action_size=None,
         state_size=None,
         model=None,
@@ -57,8 +55,6 @@ class BlueAgent(BaseAgent):
             self.model = DynamicStatePPO(
                 state_dim=state_size,
                 action_dim=action_size,
-                lr_actor=0.0005,
-                lr_critic=0.0008,
             )
         else:
             self.model = PPO(state_dim=state_size, action_dim=action_size)
@@ -75,20 +71,6 @@ class BlueAgent(BaseAgent):
 
     def end_episode(self):
         pass
-
-
-def load_red_agent(load_path: str, scenario: str):
-    if scenario != "Scenario2":
-        raise NotImplementedError("load_red_agent only supports Scenario2")
-    red_agent = RedAgent(action_size=888, state_size=40, model=load_path)
-    return red_agent
-
-
-def load_blue_agent(load_path: str, scenario: str):
-    if scenario != "Scenario2":
-        raise NotImplementedError("load_blue_agent only supports Scenario2")
-    blue_agent = BlueAgent(action_size=145, state_size=52, model=load_path)
-    return blue_agent
 
 
 class CardiffPPO(BaseAgent):
@@ -553,3 +535,20 @@ class Cardiff(CardiffPPO):
         self.scan_state = np.zeros(10)
         self.start_actions = [51, 116, 55]
         self.agent_loaded = False
+
+
+def load_red_agent(load_path: str, scenario: str):
+    if scenario != "Scenario2":
+        raise NotImplementedError("load_red_agent only supports Scenario2")
+    red_agent = RedAgent(action_size=888, state_size=40, model=load_path)
+    return red_agent
+
+
+def load_blue_agent(load_path: str, scenario: str):
+    if scenario != "Scenario2":
+        raise NotImplementedError("load_blue_agent only supports Scenario2")
+    if load_path.lower() == "cardiff":
+        blue_agent = Cardiff()
+    else:
+        blue_agent = BlueAgent(action_size=145, state_size=52, model=load_path)
+    return blue_agent
