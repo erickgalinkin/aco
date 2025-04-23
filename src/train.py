@@ -68,14 +68,16 @@ def run_training_example(
     )
     if red_agent is not None:
         logging.info(f"Loading agent {red_agent}")
-        cyborg.agents["Red"] = load_red_agent(load_path=red_agent, scenario=scenario)
+        cyborg.agents["Red"] = load_red_agent(
+            load_path=red_agent, scenario=scenario, embedding=use_embedding_agents
+        )
     if blue_agent is not None:
         logging.info(f"Loading agent {blue_agent}")
         if blue_agent.lower() == "cardiff":
             cyborg.agents["Blue"] = Cardiff()
         else:
             cyborg.agents["Blue"] = load_blue_agent(
-                load_path=blue_agent, scenario=scenario
+                load_path=blue_agent, scenario=scenario, embedding=use_embedding_agents
             )
     else:
         blue_agent = ""

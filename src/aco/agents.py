@@ -537,18 +537,22 @@ class Cardiff(CardiffPPO):
         self.agent_loaded = False
 
 
-def load_red_agent(load_path: str, scenario: str):
+def load_red_agent(load_path: str, scenario: str, embedding=False):
     if scenario != "Scenario2":
         raise NotImplementedError("load_red_agent only supports Scenario2")
-    red_agent = RedAgent(action_size=888, state_size=40, model=load_path)
+    red_agent = RedAgent(
+        action_size=888, state_size=40, model=load_path, embedding=embedding
+    )
     return red_agent
 
 
-def load_blue_agent(load_path: str, scenario: str):
+def load_blue_agent(load_path: str, scenario: str, embedding=False):
     if scenario != "Scenario2":
         raise NotImplementedError("load_blue_agent only supports Scenario2")
     if load_path.lower() == "cardiff":
         blue_agent = Cardiff()
     else:
-        blue_agent = BlueAgent(action_size=145, state_size=52, model=load_path)
+        blue_agent = BlueAgent(
+            action_size=145, state_size=52, model=load_path, embedding=embedding
+        )
     return blue_agent
