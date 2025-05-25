@@ -44,7 +44,7 @@ parser.add_argument("--scenario", type=str, default="Scenario2", help="Scenario 
 parser.add_argument(
     "--embedding_agent", action="store_true", default=False, help="Use embedding agent"
 )
-
+parser.add_argument("--patience", type=int, default=30, help="Maximum InvalidActions to ignore.")
 
 def run_training_example(
     player,
@@ -159,4 +159,5 @@ if __name__ == "__main__":
         max_eps=args.max_eps,
         randomize=args.randomize,
         use_embedding_agents=args.embedding_agent,
+        max_invalid=args.patience
     )
