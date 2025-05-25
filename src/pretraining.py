@@ -3,6 +3,7 @@ import logging
 from pathlib import Path
 
 from CybORG.Agents import SleepAgent, B_lineAgent, BlueReactRestoreAgent
+from CybORG.Shared.Actions import ExecuteRansomware
 from tqdm import tqdm
 from CybORG import CybORG
 from CybORG.Shared.Actions.Action import InvalidAction
@@ -44,7 +45,10 @@ parser.add_argument("--scenario", type=str, default="Scenario2", help="Scenario 
 parser.add_argument(
     "--embedding_agent", action="store_true", default=False, help="Use embedding agent"
 )
-parser.add_argument("--patience", type=int, default=30, help="Maximum InvalidActions to ignore.")
+parser.add_argument(
+    "--patience", type=int, default=30, help="Maximum InvalidActions to ignore."
+)
+
 
 def run_training_example(
     player,
@@ -104,8 +108,19 @@ def run_training_example(
                     cyborg.agents[player].model.buffer.actions.pop()
                     cyborg.agents[player].model.buffer.logprobs.pop()
                     cyborg.agents[player].model.buffer.state_values.pop()
+                if (
+                    isinstance(cyborg.get_last_action(player), ExecuteRansomware)
+                    and player == "Red"
+                ):
+                    r = r + j
+                elif player == "Red":
+                    r = r / j
             if j < max_steps - 1:
-                done = terminated or truncated
+                done = (
+                    terminated
+                    or truncated
+                    or isinstance(cyborg.get_last_action(player), ExecuteRansomware)
+                )
             else:
                 done = True
             rewards[player] += r
@@ -159,5 +174,5 @@ if __name__ == "__main__":
         max_eps=args.max_eps,
         randomize=args.randomize,
         use_embedding_agents=args.embedding_agent,
-        max_invalid=args.patience
+        max_invalid=args.patience,
     )
