@@ -114,7 +114,7 @@ def run_training_example(
                 ):
                     r = r + j
                 elif player == "Red":
-                    r = r / j
+                    r = r / (j + 1)
             if j < max_steps - 1:
                 done = (
                     terminated
