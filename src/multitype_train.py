@@ -57,6 +57,9 @@ parser.add_argument(
     default=False,
     help="Use HiPPO for defending agent",
 )
+parser.add_argument(
+    "--patience", type=int, default=30, help="Maximum InvalidActions to ignore."
+)
 
 
 def run_training_example(
@@ -236,4 +239,5 @@ if __name__ == "__main__":
         use_embedding_agents=args.embedding_agent,
         reduce_rewards=args.reduce_rewards,
         hierarchical=args.hierarchical,
+        max_invalid=args.patience,
     )

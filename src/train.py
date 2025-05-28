@@ -42,6 +42,9 @@ parser.add_argument(
 parser.add_argument(
     "--embedding_agent", action="store_true", default=False, help="Use embedding agent"
 )
+parser.add_argument(
+    "--patience", type=int, default=30, help="Maximum InvalidActions to ignore."
+)
 
 
 def run_training_example(
@@ -195,4 +198,5 @@ if __name__ == "__main__":
         blue_agent=args.blue_agent,
         use_embedding_agents=args.embedding_agent,
         reduce_rewards=args.reduce_rewards,
+        max_invalid=args.patience,
     )
