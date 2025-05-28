@@ -111,13 +111,14 @@ def run_training_example(
                     cyborg.agents[player].model.buffer.actions.pop()
                     cyborg.agents[player].model.buffer.logprobs.pop()
                     cyborg.agents[player].model.buffer.state_values.pop()
-                if (
-                    isinstance(cyborg.get_last_action(player), ExecuteRansomware)
-                    and player == "Red"
-                ):
-                    r = r + j
-                elif player == "Red":
-                    r = r / (j + 1)
+                if scenario == "Scenario2_ransomware":
+                    if (
+                        isinstance(cyborg.get_last_action(player), ExecuteRansomware)
+                        and player == "Red"
+                    ):
+                        r = r + j
+                    elif player == "Red":
+                        r = r / (j + 1)
             if j < max_steps - 1:
                 done = (
                     terminated

@@ -1,5 +1,7 @@
 import inspect
 import logging
+
+from CybORG.Shared.Actions import ExecuteRansomware
 from torch.utils.tensorboard import SummaryWriter
 from pathlib import Path
 from tqdm import tqdm
@@ -139,6 +141,11 @@ def run_training_example(
                         if reduce_rewards:
                             last_blue_reward = r
                             r -= last_red_reward
+                    if scenario == "Scenario2_ransomware" and player == "Red":
+                        if isinstance(cyborg.get_last_action(player), ExecuteRansomware):
+                            r = r + j
+                        else:
+                            r = r / (j + 1)
                     rewards[player] += r
                     cyborg.agents[player].model.buffer.rewards.append(r)
                     cyborg.agents[player].model.buffer.is_terminals.append(done)
