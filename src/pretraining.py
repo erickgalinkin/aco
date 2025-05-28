@@ -64,7 +64,7 @@ def run_training_example(
     path = path[:-10] + f"/Shared/Scenarios/{scenario}.yaml"
 
     if player == "Red":
-        agents = {"Blue": BlueReactRestoreAgent}
+        agents = {"Blue": SleepAgent}
     elif player == "Blue":
         agents = {"Red": B_lineAgent}
     else:
