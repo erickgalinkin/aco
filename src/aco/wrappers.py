@@ -746,7 +746,7 @@ class MultiAgentChallengeWrapper(Env, BaseWrapper):
         self.observation_spaces = self.env.observation_spaces
         self.agents = self.env.agents
         self.uuid = str(uuid4())
-        self.writer = SummaryWriter(log_dir=f"./logs/{self.uuid}")
+        # self.writer = SummaryWriter(log_dir=f"./logs/{self.uuid}")
         self.reward_threshold = reward_threshold
         self.max_steps = max_steps
         self.step_counter = 0

@@ -4,6 +4,7 @@ from pathlib import Path
 
 from CybORG.Agents import SleepAgent, B_lineAgent, BlueReactRestoreAgent
 from CybORG.Shared.Actions import ExecuteRansomware
+from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 from CybORG import CybORG
 from CybORG.Shared.Actions.Action import InvalidAction
@@ -74,6 +75,8 @@ def run_training_example(
         use_embedding_agents=use_embedding_agents,
     )
 
+    writer = SummaryWriter(log_dir=f"./logs/{cyborg.uuid}")
+
     # Tweak the formatter
     handler.setFormatter(
         logging.Formatter(
@@ -127,16 +130,11 @@ def run_training_example(
             cyborg.agents[player].model.buffer.rewards.append(r)
             cyborg.agents[player].model.buffer.is_terminals.append(done)
 
-            mean_loss = cyborg.agents[player].train(observation)
-            if mean_loss is not None:
-                losses[player].append(mean_loss)
+            cyborg.agents[player].train(observation)
 
             if done:
-                cyborg.writer.add_scalar(f"{player} Episode Reward", rewards[player], i)
-                cyborg.writer.add_scalar(
-                    f"{player} Episode Mean Loss", np.mean(losses[player]), i
-                )
-                cyborg.writer.add_scalar("Episode Length", j + 1, i)
+                writer.add_scalar(f"{player} Episode Reward", rewards[player], i)
+                writer.add_scalar("Episode Length", j + 1, i)
 
             if done and j < max_steps:
                 break
