@@ -135,28 +135,19 @@ def run_training_example(
                         if reduce_rewards:
                             last_red_reward = r
                             r -= last_blue_reward
-                        rewards[player] += r
                     if player == "Blue":
                         if reduce_rewards:
                             last_blue_reward = r
                             r -= last_red_reward
-                        rewards[player] += r
-                    if (
-                        blue_agent.lower() != "cardiff" and player == "Blue"
-                    ) or player == "Red":
-                        cyborg.agents[player].model.buffer.rewards.append(r)
-                        cyborg.agents[player].model.buffer.is_terminals.append(done)
-                if (
-                    player == "Blue" and blue_agent.lower() != "cardiff"
-                ) or player == "Red":
+                    rewards[player] += r
+                    cyborg.agents[player].model.buffer.rewards.append(r)
+                    cyborg.agents[player].model.buffer.is_terminals.append(done)
                     cyborg.agents[player].train(observation)
 
             if done:
                 writer.add_scalar("Red Episode Reward", rewards["Red"], i)
                 writer.add_scalar("Blue Episode Reward", rewards["Blue"], i)
                 writer.add_scalar("Episode Length", j + 1, i)
-                if blue_agent.lower() == "cardiff":
-                    cyborg.agents["Blue"].end_episode()
 
             if done and j < max_steps:
                 break
