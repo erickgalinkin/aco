@@ -5,10 +5,11 @@ from pathlib import Path
 from tqdm import tqdm
 from CybORG import CybORG
 from CybORG.Shared.Actions.Action import InvalidAction
+from CybORG.Agents import B_lineAgent
 import json
 from argparse import ArgumentParser
 import numpy as np
-from aco.agents import load_red_agent, load_blue_agent, Cardiff
+from aco.agents import load_red_agent, load_blue_agent, load_hippo_agent
 from aco.wrappers import MultiAgentChallengeWrapper
 
 logger = logging.getLogger(__name__)
@@ -22,13 +23,21 @@ logging.basicConfig(
 
 parser = ArgumentParser()
 parser.add_argument("--max_steps", type=int, default=100, help="Max steps per game")
-parser.add_argument("--max_eps", type=int, default=10000, help="Max episodes per game")
+parser.add_argument("--max_eps", type=int, default=30000, help="Max episodes per game")
 parser.add_argument(
-    "--randomize", action="store_true", default=False, help="Randomize steps"
+    "--ransomware",
+    type=str,
+    default="./checkpoints/7aa5ca3a-5f7f-4919-bc9d-3195cb0eb0a2/Red.ckpt",
+    help="Path (.ckpt) to load ransomware attacker.",
 )
-parser.add_argument("--scenario", type=str, default="Scenario2", help="Scenario name")
 parser.add_argument(
-    "--red_agent", type=str, default=None, help="Path (.ckpt) to load red agent."
+    "--cryptominer",
+    type=str,
+    default=None,
+    help="Path (.ckpt) to load cryptominer attacker.",
+)
+parser.add_argument(
+    "--apt", type=str, default=None, help="Path (.ckpt) to load apt attacker."
 )
 parser.add_argument(
     "--blue_agent", type=str, default=None, help="Path (.ckpt) to load blue agent."
@@ -42,63 +51,97 @@ parser.add_argument(
 parser.add_argument(
     "--embedding_agent", action="store_true", default=False, help="Use embedding agent"
 )
+parser.add_argument(
+    "--hierarchical",
+    action="store_true",
+    default=False,
+    help="Use HiPPO for defending agent",
+)
 
 
 def run_training_example(
-    scenario="Scenario2",
     max_steps=100,
     max_eps=10000,
     randomize=False,
-    red_agent=None,
+    ransomware_path=None,
+    cryptominer_path=None,
+    apt_path=None,
     blue_agent=None,
     use_embedding_agents=False,
     reduce_rewards=False,
     max_invalid=30,
+    hierarchical=False,
 ):
-    path = str(inspect.getfile(CybORG))
-    path = path[:-10] + f"/Shared/Scenarios/{scenario}.yaml"
+    scenarios = ["B_line", "Scenario2", "Scenario2_ransomware", "Scenario2_cryptominer"]
+    cyborgs = dict()
+    for scenario in scenarios:
+        if scenario == "B_line":
+            path = str(inspect.getfile(CybORG))
+            path = path[:-10] + f"/Shared/Scenarios/Scenario2.yaml"
+            agents = {"Red": B_lineAgent}
+            cyborg = MultiAgentChallengeWrapper(
+                env=CybORG(path, "sim", agents=agents),
+                use_embedding_agents=use_embedding_agents,
+            )
+            cyborgs[scenario] = cyborg
+            continue
+        path = str(inspect.getfile(CybORG))
+        path = path[:-10] + f"/Shared/Scenarios/{scenario}.yaml"
 
-    cyborg = MultiAgentChallengeWrapper(
-        env=CybORG(path, "sim"), use_embedding_agents=use_embedding_agents
-    )
+        cyborg = MultiAgentChallengeWrapper(
+            env=CybORG(path, "sim"), use_embedding_agents=use_embedding_agents
+        )
+        cyborgs[scenario] = cyborg
 
-    writer = SummaryWriter(log_dir=f"./logs/{cyborg.uuid}")
+    writer = SummaryWriter(log_dir=f"./logs/multitype/{cyborgs['Scenario2'].uuid}")
 
     # Tweak the formatter
     handler.setFormatter(
-        logging.Formatter(
-            f"{cyborg.uuid}: " "%(asctime)s - %(levelname)s - %(message)s"
-        )
+        logging.Formatter(f"%(asctime)s - %(levelname)s - %(message)s")
     )
-    if red_agent is not None:
-        logging.info(f"Loading agent {red_agent}")
-        cyborg.agents["Red"] = load_red_agent(
-            load_path=red_agent, scenario=scenario, embedding=use_embedding_agents
-        )
+
+    logging.info(f"Loading agent {ransomware_path}")
+    ransomware_agent = load_red_agent(
+        load_path=ransomware_path, scenario=scenario, embedding=use_embedding_agents
+    )
+    logging.info(f"Loading agent {cryptominer_path}")
+    cryptominer_agent = load_red_agent(
+        load_path=cryptominer_path, scenario=scenario, embedding=use_embedding_agents
+    )
+    logging.info(f"Loading agent {apt_path}")
+    apt_agent = load_red_agent(
+        load_path=apt_path, scenario=scenario, embedding=use_embedding_agents
+    )
     if blue_agent is not None:
         logging.info(f"Loading agent {blue_agent}")
-        if blue_agent.lower() == "cardiff":
-            cyborg.agents["Blue"] = Cardiff()
+        if hierarchical:
+            defending_agent = load_hippo_agent(
+                load_path=blue_agent, scenario=scenario, embedding=use_embedding_agents
+            )
         else:
-            cyborg.agents["Blue"] = load_blue_agent(
+            defending_agent = load_blue_agent(
                 load_path=blue_agent, scenario=scenario, embedding=use_embedding_agents
             )
     else:
-        blue_agent = ""
+        defending_agent = cyborgs["Scenario2"].agents["Blue"]
 
-    param_groups = cyborg.agents["Red"].model.optimizer.param_groups
-    actor_lr = param_groups[0]["lr"]
-    critic_lr = param_groups[1]["lr"]
-    msg = f"Starting training for {scenario}, cyborg uuid: {cyborg.uuid}; actor lr: {actor_lr}; critic lr: {critic_lr}"
-    print(msg)
-    logging.info(msg)
+    cyborgs["Scenario2"].agents["Red"] = apt_agent
+    cyborgs["Scenario2_ransomware"].agents["Red"] = ransomware_agent
+    cyborgs["Scenario2_cryptominer"].agents["Red"] = cryptominer_agent
+
+    print(
+        f"Starting multitype training. Results logged at ./logs/multitype/{cyborgs['Scenario2'].uuid}"
+    )
 
     for i in tqdm(range(max_eps), position=0):
+        scenario = np.random.choice(scenarios)
+        cyborg = cyborgs[scenario]
         _ = cyborg.reset("Blue")
         _ = cyborg.reset("Red")
         last_red_reward = 0
         last_blue_reward = 0
         rewards = {"Red": 0, "Blue": 0}
+        losses = {"Red": list(), "Blue": list()}
         if randomize:
             max_steps = np.random.choice([30, 50, 100])
         for j in tqdm(range(max_steps), position=1, leave=False):
@@ -109,7 +152,12 @@ def run_training_example(
                 attempts = 0
                 while not (valid_action or attempts > max_invalid):
                     attempts += 1
-                    action = cyborg.agents[player].get_action(observation, action_space)
+                    if player == "Blue":
+                        action = defending_agent.get_action(observation, action_space)
+                    else:
+                        action = cyborg.agents[player].get_action(
+                            observation, action_space
+                        )
                     next_observation, r, terminated, truncated, info = cyborg.step(
                         agent=player, action=action
                     )
@@ -128,50 +176,41 @@ def run_training_example(
                 else:
                     done = True
                 if player in rewards.keys():
-                    if player == "Red":
-                        if reduce_rewards:
+                    if reduce_rewards:
+                        if player == "Red":
                             last_red_reward = r
                             r -= last_blue_reward
                         rewards[player] += r
-                    if player == "Blue":
-                        if reduce_rewards:
+                        if player == "Blue":
                             last_blue_reward = r
                             r -= last_red_reward
                         rewards[player] += r
-                    if (
-                        blue_agent.lower() != "cardiff" and player == "Blue"
-                    ) or player == "Red":
+                    if player == "Red":
                         cyborg.agents[player].model.buffer.rewards.append(r)
                         cyborg.agents[player].model.buffer.is_terminals.append(done)
-                if (
-                    player == "Blue" and blue_agent.lower() != "cardiff"
-                ) or player == "Red":
-                    cyborg.agents[player].train(observation)
+                    if player == "Blue":
+                        defending_agent.model.buffer.rewards.append(r)
+                        defending_agent.model.buffer.is_terminals.append(done)
 
             if done:
                 writer.add_scalar("Red Episode Reward", rewards["Red"], i)
                 writer.add_scalar("Blue Episode Reward", rewards["Blue"], i)
                 writer.add_scalar("Episode Length", j + 1, i)
-                if blue_agent.lower() == "cardiff":
-                    cyborg.agents["Blue"].end_episode()
 
             if done and j < max_steps:
                 break
 
-    logging.info(f"Finished training for {scenario}.")
-    if hasattr(cyborg, "uuid"):
-        model_subdir = f"{cyborg.uuid}"
-    else:
-        if randomize:
-            max_steps = "random"
-        model_subdir = f"training_run_{max_eps}_{max_steps}_{scenario}"
+    logging.info(f"Finished multitype training.")
+    model_subdir = (
+        f"training_run_{max_eps}_{max_steps}_multitype_{cyborgs['Scenario2'].uuid}"
+    )
 
     logging.info(f"Writing models to ./checkpoints/{model_subdir}")
     model_path = Path(f"./checkpoints/{model_subdir}")
     model_path.mkdir(parents=True, exist_ok=True)
-    cyborg.agents["Red"].model.save(f"./checkpoints/{model_subdir}/red.ckpt")
-    if blue_agent.lower() != "cardiff":
-        cyborg.agents["Blue"].model.save(f"./checkpoints/{model_subdir}/blue.ckpt")
+    for id, cyborg in cyborgs.items():
+        cyborg.agents["Red"].model.save(f"./checkpoints/{model_subdir}/{id}_red.ckpt")
+    defending_agent.model.save(f"./checkpoints/{model_subdir}/defender.ckpt")
     action_record_path = f"./logs/{model_subdir}_action_record.json"
     logging.info(f"Writing action record to {action_record_path}")
     try:
@@ -187,12 +226,14 @@ if __name__ == "__main__":
     if args.max_steps <= 0 or args.max_eps <= 0:
         raise ValueError("Max steps and max_eps must be greater than zero.")
     run_training_example(
-        scenario=args.scenario,
         max_steps=args.max_steps,
         max_eps=args.max_eps,
         randomize=args.randomize,
-        red_agent=args.red_agent,
+        ransomware_path=args.ransomware_path,
+        cryptominer_path=args.cryptominer_path,
+        apt_path=args.apt_path,
         blue_agent=args.blue_agent,
         use_embedding_agents=args.embedding_agent,
         reduce_rewards=args.reduce_rewards,
+        hierarchical=args.hierarchical,
     )

@@ -34,8 +34,7 @@ class RedAgent(BaseAgent):
         return action
 
     def train(self, results):
-        mean_loss = self.model.update()
-        return mean_loss
+        self.model.update()
 
     def end(self, results):
         pass
@@ -66,8 +65,7 @@ class BlueAgent(BaseAgent):
         return action
 
     def train(self, results):
-        mean_loss = self.model.update()
-        return mean_loss
+        self.model.update()
 
     def end_episode(self):
         pass
@@ -556,3 +554,9 @@ def load_blue_agent(load_path: str, scenario: str, embedding=False):
             action_size=145, state_size=52, model=load_path, embedding=embedding
         )
     return blue_agent
+
+
+def load_hippo_agent(load_path: str, scenario: str, embedding=False):
+    return BlueSleepAgent(
+        action_size=145, state_size=52, model=load_path, embedding=embedding
+    )

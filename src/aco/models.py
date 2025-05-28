@@ -288,7 +288,6 @@ class PPO:
         # calculate advantages
         advantages = rewards.detach() - old_state_values.detach()
 
-        mean_loss = 0
         # Optimize policy for K epochs
         for _ in range(self.k_epochs):
             # Evaluating old actions and values
@@ -314,7 +313,6 @@ class PPO:
                 + 0.5 * self.MseLoss(state_values, rewards)
                 - 0.01 * dist_entropy
             )
-            mean_loss += loss.mean().detach().cpu().numpy().item()
 
             # take gradient step
             self.optimizer.zero_grad()
@@ -326,8 +324,6 @@ class PPO:
 
         # clear buffer
         self.buffer.clear()
-
-        return mean_loss
 
     def save(self, checkpoint_path):
         torch.save(self.policy_old.state_dict(), checkpoint_path)
