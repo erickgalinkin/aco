@@ -214,6 +214,7 @@ class MultiAgentTableWrapper(BaseWrapper):
 
     def __init__(self, env=None, output_mode="table"):
         super().__init__(env)
+        self.base_env = env
         red_env = TrueTableWrapper(env=env, agent="Red")
         blue_env = TrueTableWrapper(env=env, agent="Blue")
         self.envs = {"Red": red_env, "Blue": blue_env}
@@ -231,6 +232,7 @@ class MultiAgentTableWrapper(BaseWrapper):
     def reset(self, agent=None, **kwargs):
         self.active_agent = agent
         self.env = self.envs[agent]
+        self.base_env.reset()
         result = self.env.reset(agent, **kwargs)
         if agent == "Red":
             self.red_info = {}

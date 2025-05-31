@@ -36,7 +36,7 @@ class RedAgent(BaseAgent):
     def train(self, results):
         self.model.update()
 
-    def end(self, results):
+    def end_episode(self):
         pass
 
 

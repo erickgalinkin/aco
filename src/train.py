@@ -155,6 +155,8 @@ def run_training_example(
                 writer.add_scalar("Red Episode Reward", rewards["Red"], i)
                 writer.add_scalar("Blue Episode Reward", rewards["Blue"], i)
                 writer.add_scalar("Episode Length", j + 1, i)
+                cyborg.agents["Red"].end_episode()
+                cyborg.agents["Blue"].end_episode()
 
             if done and j < max_steps:
                 break
