@@ -276,9 +276,9 @@ if __name__ == "__main__":
     run_training_example(
         max_steps=args.max_steps,
         max_eps=args.max_eps,
-        ransomware_path=args.ransomware_path,
-        cryptominer_path=args.cryptominer_path,
-        apt_path=args.apt_path,
+        ransomware_path=args.ransomware,
+        cryptominer_path=args.cryptominer,
+        apt_path=args.apt,
         blue_agent=args.blue_agent,
         use_embedding_agents=args.embedding_agent,
         reduce_rewards=args.reduce_rewards,
