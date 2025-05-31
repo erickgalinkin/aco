@@ -133,14 +133,12 @@ def run_training_example(
                 else:
                     done = True
                 if player in rewards.keys():
-                    if player == "Red":
-                        if reduce_rewards:
-                            last_red_reward = r
-                            r -= last_blue_reward
-                    if player == "Blue":
-                        if reduce_rewards:
-                            last_blue_reward = r
-                            r -= last_red_reward
+                    if player == "Red" and reduce_rewards:
+                        last_red_reward = r
+                        r -= last_blue_reward
+                    if player == "Blue" and reduce_rewards:
+                        last_blue_reward = r
+                        r -= last_red_reward
                     if scenario == "Scenario2_ransomware" and player == "Red":
                         if isinstance(
                             cyborg.get_last_action(player), ExecuteRansomware

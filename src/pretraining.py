@@ -76,6 +76,8 @@ def run_training_example(
         env=CybORG(path, "sim", agents=agents),
         use_embedding_agents=use_embedding_agents,
     )
+    agents = agents.popitem()
+    cyborg.agents[agents[0]] = agents[1]()
 
     writer = SummaryWriter(log_dir=f"./logs/{cyborg.uuid}")
 
@@ -91,11 +93,33 @@ def run_training_example(
     logging.info(msg)
     for i in tqdm(range(max_eps), position=0):
         _ = cyborg.reset(player)
+        _ = cyborg.reset(opponent)
+
         rewards = {player: 0}
-        losses = {player: list()}
         if randomize:
             max_steps = np.random.choice([30, 50, 100])
         for j in tqdm(range(max_steps), position=1, leave=False):
+            if isinstance(cyborg.agents[opponent], B_lineAgent):
+                try:
+                    print(f"Agent status on entry: {cyborg.agents[opponent].action}")
+                    observation = cyborg.env.env.env.env.env.get_observation("Red")
+                    action_space = cyborg.env.env.env.env.env.get_action_space("Red")
+                    action = cyborg.agents[opponent].get_action(
+                        observation, action_space
+                    )
+                    _ = cyborg.env.env.env.env.env.step(agent=opponent, action=action)
+                except Exception as e:
+                    print(
+                        f"Agent status on exception: {cyborg.agents[opponent].action}"
+                    )
+                    print(f"Exception: {e} at episode {i} step {j}")
+                    exit(1)
+            else:
+                observation = cyborg.get_observation(opponent)
+                action_space = cyborg.get_action_space(opponent)
+                action = cyborg.agents[opponent].get_action(observation, action_space)
+                _ = cyborg.step(agent=opponent, action=action)
+
             observation = cyborg.get_observation(player)
             action_space = cyborg.get_action_space(player)
             valid_action = False
@@ -134,11 +158,6 @@ def run_training_example(
             cyborg.agents[player].model.buffer.is_terminals.append(done)
 
             cyborg.agents[player].train(observation)
-
-            observation = cyborg.get_observation(opponent)
-            action_space = cyborg.get_action_space(opponent)
-            action = cyborg.agents[opponent].get_action(observation, action_space)
-            _ = cyborg.step(agent=opponent, action=action)
 
             if done:
                 writer.add_scalar(f"{player} Episode Reward", rewards[player], i)

@@ -177,6 +177,19 @@ def run_training_example(
         rewards = {"Red": 0, "Blue": 0}
         for j in tqdm(range(max_steps), position=1, leave=False):
             for player in ["Red", "Blue"]:
+                # B_line requires different observation and action_space
+                if player == "Red" and scenario == "B_line":
+                    observation = cyborg.env.env.env.env.env.get_observation(player)
+                    action_space = cyborg.env.env.env.env.env.get_action_space(player)
+                    action = cyborg.agents[player].get_action(observation, action_space)
+                    results = cyborg.env.env.env.env.env.step(
+                        agent=player, action=action
+                    )
+                    reward = results.reward
+                    done = results.done
+                    rewards[player] += reward
+                    continue
+
                 observation = cyborg.get_observation(player)
                 action_space = cyborg.get_action_space(player)
                 valid_action = False
@@ -219,7 +232,6 @@ def run_training_example(
                         # if player == "Blue":
                         #     last_blue_reward = r
                         #     r -= last_red_reward
-                        # rewards[player] += r
                     # Specialized reward function for ransomware agent
                     if scenario == "Scenario2_ransomware" and player == "Red":
                         if isinstance(
@@ -228,12 +240,15 @@ def run_training_example(
                             r = r + j
                         else:
                             r = r / (j + 1)
+                    rewards[player] += r
                     if player == "Red":
                         cyborg.agents[player].model.buffer.rewards.append(r)
                         cyborg.agents[player].model.buffer.is_terminals.append(done)
+                        cyborg.agents[player].train(observation)
                     if player == "Blue":
                         defending_agent.model.buffer.rewards.append(r)
                         defending_agent.model.buffer.is_terminals.append(done)
+                        defending_agent.train(observation)
 
             if done:
                 red_type = scenario_mapping[scenario]
