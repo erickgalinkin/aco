@@ -252,6 +252,8 @@ def run_training_example(
                         defending_agent.train(observation)
 
             if done:
+                if scenario == "B_line":
+                    logger.info(f"B_line encountered {cyborg.agents['Red'].exception_count} exceptions.")
                 red_type = scenario_mapping[scenario]
                 writer.add_scalar(f"{red_type} Episode Reward", rewards["Red"], i)
                 writer.add_scalar("Blue Episode Reward", rewards["Blue"], i)
