@@ -142,7 +142,9 @@ def run_training_example(
                             last_blue_reward = r
                             r -= last_red_reward
                     if scenario == "Scenario2_ransomware" and player == "Red":
-                        if isinstance(cyborg.get_last_action(player), ExecuteRansomware):
+                        if isinstance(
+                            cyborg.get_last_action(player), ExecuteRansomware
+                        ):
                             r = r + j
                         else:
                             r = r / (j + 1)

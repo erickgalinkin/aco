@@ -77,9 +77,23 @@ def run_training_example(
     max_invalid=30,
     hierarchical=False,
 ):
+    print("Setting up environments...")
     scenarios = ["B_line", "Scenario2", "Scenario2_ransomware", "Scenario2_cryptominer"]
+    scenario_mapping = {
+        "B_line": "B_line",
+        "Scenario2": "APT",
+        "Scenario2_ransomware": "Ransomware",
+        "Scenario2_cryptominer": "Cryptominer",
+    }
+    instance_counts = {
+        "B_line": 0,
+        "Scenario2": 0,
+        "Scenario2_ransomware": 0,
+        "Scenario2_cryptominer": 0,
+    }
     cyborgs = dict()
     for scenario in scenarios:
+        logger.info(f"Setting up scenario {scenario}...")
         if scenario == "B_line":
             path = str(inspect.getfile(CybORG))
             path = path[:-10] + f"/Shared/Scenarios/Scenario2.yaml"
@@ -97,8 +111,9 @@ def run_training_example(
             env=CybORG(path, "sim"), use_embedding_agents=use_embedding_agents
         )
         cyborgs[scenario] = cyborg
-
-    writer = SummaryWriter(log_dir=f"./logs/multitype/{cyborgs['Scenario2'].uuid}")
+        logger.info(
+            f"Scenario {scenario} loaded. Cyborg UUID: {cyborgs[scenario].uuid}"
+        )
 
     # Tweak the formatter
     handler.setFormatter(
@@ -127,6 +142,10 @@ def run_training_example(
             defending_agent = load_blue_agent(
                 load_path=blue_agent, scenario=scenario, embedding=use_embedding_agents
             )
+    elif hierarchical:
+        defending_agent = load_hippo_agent(
+            load_path=None, scenario=None, embedding=use_embedding_agents
+        )
     else:
         defending_agent = cyborgs["Scenario2"].agents["Blue"]
 
@@ -138,15 +157,17 @@ def run_training_example(
         f"Starting multitype training. Results logged at ./logs/multitype/{cyborgs['Scenario2'].uuid}"
     )
 
+    writer = SummaryWriter(log_dir=f"./logs/multitype/{cyborgs['Scenario2'].uuid}")
+
     for i in tqdm(range(max_eps), position=0):
         scenario = np.random.choice(scenarios)
+        instance_counts[scenario] = instance_counts[scenario] + 1
         cyborg = cyborgs[scenario]
         _ = cyborg.reset("Blue")
         _ = cyborg.reset("Red")
-        last_red_reward = 0
-        last_blue_reward = 0
+        # last_red_reward = 0
+        # last_blue_reward = 0
         rewards = {"Red": 0, "Blue": 0}
-        losses = {"Red": list(), "Blue": list()}
         if randomize:
             max_steps = np.random.choice([30, 50, 100])
         for j in tqdm(range(max_steps), position=1, leave=False):
@@ -182,16 +203,23 @@ def run_training_example(
                     done = True
                 if player in rewards.keys():
                     if reduce_rewards:
-                        if player == "Red":
-                            last_red_reward = r
-                            r -= last_blue_reward
-                        rewards[player] += r
-                        if player == "Blue":
-                            last_blue_reward = r
-                            r -= last_red_reward
-                        rewards[player] += r
+                        # Implement this in the future maybe?
+                        raise NotImplementedError(
+                            "Reduced rewards not implemented for multitype."
+                        )
+                        # if player == "Red":
+                        #     last_red_reward = r
+                        #     r -= last_blue_reward
+                        # rewards[player] += r
+                        # if player == "Blue":
+                        #     last_blue_reward = r
+                        #     r -= last_red_reward
+                        # rewards[player] += r
+                    # Specialized reward function for ransomware agent
                     if scenario == "Scenario2_ransomware" and player == "Red":
-                        if isinstance(cyborg.get_last_action(player), ExecuteRansomware):
+                        if isinstance(
+                            cyborg.get_last_action(player), ExecuteRansomware
+                        ):
                             r = r + j
                         else:
                             r = r / (j + 1)
@@ -203,32 +231,43 @@ def run_training_example(
                         defending_agent.model.buffer.is_terminals.append(done)
 
             if done:
-                writer.add_scalar("Red Episode Reward", rewards["Red"], i)
+                red_type = scenario_mapping[scenario]
+                writer.add_scalar(f"{red_type} Episode Reward", rewards["Red"], i)
                 writer.add_scalar("Blue Episode Reward", rewards["Blue"], i)
                 writer.add_scalar("Episode Length", j + 1, i)
 
             if done and j < max_steps:
                 break
 
-    logging.info(f"Finished multitype training.")
-    model_subdir = (
-        f"training_run_{max_eps}_{max_steps}_multitype_{cyborgs['Scenario2'].uuid}"
-    )
+    defender_type = "hierarchical" if hierarchical else "multitype"
+    logging.info(f"Finished {defender_type} training.")
+    print(f"{defender_type} training complete! Saving results...")
+    model_subdir = f"training_run_{max_eps}_{max_steps}_{defender_type}_{cyborgs['Scenario2'].uuid}"
 
     logging.info(f"Writing models to ./checkpoints/{model_subdir}")
     model_path = Path(f"./checkpoints/{model_subdir}")
     model_path.mkdir(parents=True, exist_ok=True)
-    for id, cyborg in cyborgs.items():
-        cyborg.agents["Red"].model.save(f"./checkpoints/{model_subdir}/{id}_red.ckpt")
+    for scenario_name, cyborg in cyborgs.items():
+        red_type = scenario_mapping[scenario]
+        cyborg.agents["Red"].model.save(
+            f"./checkpoints/{model_subdir}/{red_type}_red.ckpt"
+        )
+        action_record_path = f"./logs/{model_subdir}/{red_type}_action_record.json"
+        logging.info(f"Writing action record to {action_record_path}")
+        try:
+            with open(action_record_path, "w") as f:
+                json.dump(cyborg.action_record, f)
+        except Exception as e:
+            logging.critical(
+                f"Failed to write action record to {action_record_path}: {e}"
+            )
+            print(f"Failed to write action record for {scenario_name}!")
     defending_agent.model.save(f"./checkpoints/{model_subdir}/defender.ckpt")
-    action_record_path = f"./logs/{model_subdir}_action_record.json"
-    logging.info(f"Writing action record to {action_record_path}")
-    try:
-        with open(action_record_path, "w") as f:
-            json.dump(cyborg.action_record, f)
-    except Exception as e:
-        logging.critical(f"Failed to write action record to {action_record_path}: {e}")
-        print("Failed to write action record!")
+
+    print("Instance counts:")
+    for k, v in instance_counts.items():
+        red_type = scenario_mapping[k]
+        print(f"{red_type}: {v} instances \t {(v / max_eps) * 100:.2f}%")
 
 
 if __name__ == "__main__":
