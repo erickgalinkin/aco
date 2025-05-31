@@ -101,6 +101,7 @@ def run_training_example(
                 env=CybORG(path, "sim", agents=agents),
                 use_embedding_agents=use_embedding_agents,
             )
+            cyborg.agents["Red"] = agents["Red"]()
             cyborgs[scenario] = cyborg
             continue
         path = str(inspect.getfile(CybORG))
