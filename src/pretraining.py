@@ -65,8 +65,10 @@ def run_training_example(
 
     if player == "Red":
         agents = {"Blue": SleepAgent}
+        opponent = "Blue"
     elif player == "Blue":
         agents = {"Red": B_lineAgent}
+        opponent = "Red"
     else:
         raise ValueError("Only 'Red' or 'Blue' player values are supported")
 
@@ -123,7 +125,7 @@ def run_training_example(
                 done = (
                     terminated
                     or truncated
-                    or isinstance(cyborg.get_last_action(player), ExecuteRansomware)
+                    or isinstance(cyborg.get_last_action("Red"), ExecuteRansomware)
                 )
             else:
                 done = True
@@ -132,6 +134,11 @@ def run_training_example(
             cyborg.agents[player].model.buffer.is_terminals.append(done)
 
             cyborg.agents[player].train(observation)
+
+            observation = cyborg.get_observation(opponent)
+            action_space = cyborg.get_action_space(opponent)
+            action = cyborg.agents[opponent].get_action(observation, action_space)
+            _ = cyborg.step(agent=opponent, action=action)
 
             if done:
                 writer.add_scalar(f"{player} Episode Reward", rewards[player], i)
