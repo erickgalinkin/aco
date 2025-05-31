@@ -67,7 +67,6 @@ parser.add_argument(
 def run_training_example(
     max_steps=100,
     max_eps=10000,
-    randomize=False,
     ransomware_path=None,
     cryptominer_path=None,
     apt_path=None,
@@ -277,7 +276,6 @@ if __name__ == "__main__":
     run_training_example(
         max_steps=args.max_steps,
         max_eps=args.max_eps,
-        randomize=args.randomize,
         ransomware_path=args.ransomware_path,
         cryptominer_path=args.cryptominer_path,
         apt_path=args.apt_path,
