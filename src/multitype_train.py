@@ -121,25 +121,25 @@ def run_training_example(
 
     logging.info(f"Loading agent {ransomware_path}")
     ransomware_agent = load_red_agent(
-        load_path=ransomware_path, scenario=scenario, embedding=use_embedding_agents
+        load_path=ransomware_path, scenario="Scenario2_ransomware", embedding=use_embedding_agents
     )
     logging.info(f"Loading agent {cryptominer_path}")
     cryptominer_agent = load_red_agent(
-        load_path=cryptominer_path, scenario=scenario, embedding=use_embedding_agents
+        load_path=cryptominer_path, scenario="Scenario2_cryptominer", embedding=use_embedding_agents
     )
     logging.info(f"Loading agent {apt_path}")
     apt_agent = load_red_agent(
-        load_path=apt_path, scenario=scenario, embedding=use_embedding_agents
+        load_path=apt_path, scenario="Scenario2", embedding=use_embedding_agents
     )
     if blue_agent is not None:
         logging.info(f"Loading agent {blue_agent}")
         if hierarchical:
             defending_agent = load_hippo_agent(
-                load_path=blue_agent, scenario=scenario, embedding=use_embedding_agents
+                load_path=blue_agent, scenario="Scenario2", embedding=use_embedding_agents
             )
         else:
             defending_agent = load_blue_agent(
-                load_path=blue_agent, scenario=scenario, embedding=use_embedding_agents
+                load_path=blue_agent, scenario="Scenario2", embedding=use_embedding_agents
             )
     elif hierarchical:
         defending_agent = load_hippo_agent(
@@ -167,8 +167,6 @@ def run_training_example(
         # last_red_reward = 0
         # last_blue_reward = 0
         rewards = {"Red": 0, "Blue": 0}
-        if randomize:
-            max_steps = np.random.choice([30, 50, 100])
         for j in tqdm(range(max_steps), position=1, leave=False):
             for player in ["Red", "Blue"]:
                 observation = cyborg.get_observation(player)
