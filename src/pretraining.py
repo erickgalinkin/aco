@@ -7,7 +7,7 @@ from CybORG.Shared.Actions import ExecuteRansomware
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 from CybORG import CybORG
-from CybORG.Shared.Actions.Action import InvalidAction
+from CybORG.Shared.Actions.Action import InvalidAction, Sleep
 from aco.wrappers import MultiAgentChallengeWrapper
 import json
 from argparse import ArgumentParser
@@ -64,7 +64,7 @@ def run_training_example(
     path = path[:-10] + f"/Shared/Scenarios/{scenario}.yaml"
 
     if player == "Red":
-        agents = {"Blue": SleepAgent}
+        agents = {"Blue": BlueReactRestoreAgent}
         opponent = "Blue"
     elif player == "Blue":
         agents = {"Red": B_lineAgent}
@@ -100,20 +100,16 @@ def run_training_example(
             max_steps = np.random.choice([30, 50, 100])
         for j in tqdm(range(max_steps), position=1, leave=False):
             if isinstance(cyborg.agents[opponent], B_lineAgent):
-                try:
-                    print(f"Agent status on entry: {cyborg.agents[opponent].action}")
-                    observation = cyborg.env.env.env.env.env.get_observation("Red")
-                    action_space = cyborg.env.env.env.env.env.get_action_space("Red")
-                    action = cyborg.agents[opponent].get_action(
-                        observation, action_space
-                    )
-                    _ = cyborg.env.env.env.env.env.step(agent=opponent, action=action)
-                except Exception as e:
-                    print(
-                        f"Agent status on exception: {cyborg.agents[opponent].action}"
-                    )
-                    print(f"Exception: {e} at episode {i} step {j}")
-                    exit(1)
+                observation = cyborg.env.env.env.env.env.get_observation(player)
+                action_space = cyborg.env.env.env.env.env.get_action_space(player)
+                action = cyborg.agents[player].get_action(observation, action_space)
+                # B_line never Sleeps except when it encounters an exception.
+                if isinstance(action, Sleep):
+                    observation = cyborg.env.env.env.env.env.get_agent_state("Red")
+                    action = cyborg.agents[player].get_action(observation, action_space)
+                    if isinstance(action, Sleep):
+                        logger.warning("B_line unlikely to run properly!")
+                _ = cyborg.env.env.env.env.env.step(agent=opponent, action=action)
             else:
                 observation = cyborg.get_observation(opponent)
                 action_space = cyborg.get_action_space(opponent)

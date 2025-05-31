@@ -1,7 +1,7 @@
 import inspect
 import logging
 
-from CybORG.Shared.Actions import ExecuteRansomware
+from CybORG.Shared.Actions import ExecuteRansomware, Sleep
 from torch.utils.tensorboard import SummaryWriter
 from pathlib import Path
 from tqdm import tqdm
@@ -183,6 +183,14 @@ def run_training_example(
                     observation = cyborg.env.env.env.env.env.get_observation(player)
                     action_space = cyborg.env.env.env.env.env.get_action_space(player)
                     action = cyborg.agents[player].get_action(observation, action_space)
+                    # B_line never Sleeps except when it encounters an exception.
+                    if isinstance(action, Sleep):
+                        observation = cyborg.env.env.env.env.env.get_agent_state("Red")
+                        action = cyborg.agents[player].get_action(
+                            observation, action_space
+                        )
+                        if isinstance(action, Sleep):
+                            logger.warning("B_line unlikely to run properly!")
                     results = cyborg.env.env.env.env.env.step(
                         agent=player, action=action
                     )
