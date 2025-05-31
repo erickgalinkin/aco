@@ -121,11 +121,15 @@ def run_training_example(
 
     logging.info(f"Loading agent {ransomware_path}")
     ransomware_agent = load_red_agent(
-        load_path=ransomware_path, scenario="Scenario2_ransomware", embedding=use_embedding_agents
+        load_path=ransomware_path,
+        scenario="Scenario2_ransomware",
+        embedding=use_embedding_agents,
     )
     logging.info(f"Loading agent {cryptominer_path}")
     cryptominer_agent = load_red_agent(
-        load_path=cryptominer_path, scenario="Scenario2_cryptominer", embedding=use_embedding_agents
+        load_path=cryptominer_path,
+        scenario="Scenario2_cryptominer",
+        embedding=use_embedding_agents,
     )
     logging.info(f"Loading agent {apt_path}")
     apt_agent = load_red_agent(
@@ -135,11 +139,15 @@ def run_training_example(
         logging.info(f"Loading agent {blue_agent}")
         if hierarchical:
             defending_agent = load_hippo_agent(
-                load_path=blue_agent, scenario="Scenario2", embedding=use_embedding_agents
+                load_path=blue_agent,
+                scenario="Scenario2",
+                embedding=use_embedding_agents,
             )
         else:
             defending_agent = load_blue_agent(
-                load_path=blue_agent, scenario="Scenario2", embedding=use_embedding_agents
+                load_path=blue_agent,
+                scenario="Scenario2",
+                embedding=use_embedding_agents,
             )
     elif hierarchical:
         defending_agent = load_hippo_agent(
@@ -153,10 +161,10 @@ def run_training_example(
     cyborgs["Scenario2_cryptominer"].agents["Red"] = cryptominer_agent
 
     print(
-        f"Starting multitype training. Results logged at ./logs/multitype/{cyborgs['Scenario2'].uuid}"
+        f"Starting multitype training. Results logged at ./logs/multitype_{cyborgs['Scenario2'].uuid}"
     )
 
-    writer = SummaryWriter(log_dir=f"./logs/multitype/{cyborgs['Scenario2'].uuid}")
+    writer = SummaryWriter(log_dir=f"./logs/multitype_{cyborgs['Scenario2'].uuid}")
 
     for i in tqdm(range(max_eps), position=0):
         scenario = np.random.choice(scenarios)
