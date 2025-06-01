@@ -71,7 +71,7 @@ class BlueAgent(BaseAgent):
         pass
 
 
-class HierarchicalBlueAgent(BaseAgent):
+class HierarchicalBlueAgent(BlueAgent):
     def __init__(
         self,
         ransomware,
