@@ -11,7 +11,12 @@ from CybORG.Agents import B_lineAgent
 import json
 from argparse import ArgumentParser
 import numpy as np
-from aco.agents import load_red_agent, load_blue_agent, load_hippo_agent
+from aco.agents import (
+    load_red_agent,
+    load_blue_agent,
+    load_hippo_agent,
+    HierarchicalBlueAgent,
+)
 from aco.wrappers import MultiAgentChallengeWrapper
 
 logger = logging.getLogger(__name__)
@@ -29,7 +34,7 @@ parser.add_argument("--max_eps", type=int, default=30000, help="Max episodes per
 parser.add_argument(
     "--ransomware",
     type=str,
-    default="./checkpoints/7aa5ca3a-5f7f-4919-bc9d-3195cb0eb0a2/Red.ckpt",
+    default=None,
     help="Path (.ckpt) to load ransomware attacker.",
 )
 parser.add_argument(
@@ -43,6 +48,24 @@ parser.add_argument(
 )
 parser.add_argument(
     "--blue_agent", type=str, default=None, help="Path (.ckpt) to load blue agent."
+)
+parser.add_argument(
+    "--rw_defender",
+    type=str,
+    default=None,
+    help="Path (.ckpt) to load ransomware defender agent. (Only used if --hierarchical)",
+)
+parser.add_argument(
+    "--apt_defender",
+    type=str,
+    default=None,
+    help="Path (.ckpt) to load apt defender agent. (Only used if --hierarchical)",
+)
+parser.add_argument(
+    "--cm_defender",
+    type=str,
+    default=None,
+    help="Path (.ckpt) to load cryptominer defender agent. (Only used if --hierarchical)",
 )
 parser.add_argument(
     "--reduce_rewards",
@@ -71,6 +94,9 @@ def run_training_example(
     cryptominer_path=None,
     apt_path=None,
     blue_agent=None,
+    rw_defender=None,
+    apt_defender=None,
+    cm_defender=None,
     use_embedding_agents=False,
     reduce_rewards=False,
     max_invalid=30,
@@ -141,6 +167,9 @@ def run_training_example(
         if hierarchical:
             defending_agent = load_hippo_agent(
                 load_path=blue_agent,
+                ransomware=rw_defender,
+                apt=apt_defender,
+                cryptominer=cm_defender,
                 scenario="Scenario2",
                 embedding=use_embedding_agents,
             )
@@ -151,8 +180,12 @@ def run_training_example(
                 embedding=use_embedding_agents,
             )
     elif hierarchical:
-        defending_agent = load_hippo_agent(
-            load_path=None, scenario=None, embedding=use_embedding_agents
+        if rw_defender is None or apt_defender is None or cm_defender is None:
+            raise TypeError(
+                "Must provide rw_defender, apt_defender, and cm_defender for hierarchical."
+            )
+        defending_agent = HierarchicalBlueAgent(
+            ransomware=rw_defender, apt=apt_defender, cryptominer=cm_defender
         )
     else:
         defending_agent = cyborgs["Scenario2"].agents["Blue"]
@@ -160,6 +193,8 @@ def run_training_example(
     cyborgs["Scenario2"].agents["Red"] = apt_agent
     cyborgs["Scenario2_ransomware"].agents["Red"] = ransomware_agent
     cyborgs["Scenario2_cryptominer"].agents["Red"] = cryptominer_agent
+    for cyborg in cyborgs.values():
+        cyborg.agents["Blue"] = defending_agent
 
     print(
         f"Starting multitype training. Results logged at ./logs/multitype_{cyborgs['Scenario2'].uuid}"
@@ -204,7 +239,6 @@ def run_training_example(
                         agent=player, action=action
                     )
                     reward = results.reward
-                    done = results.done
                     rewards[player] += reward
                     continue
 
@@ -321,6 +355,9 @@ if __name__ == "__main__":
         cryptominer_path=args.cryptominer,
         apt_path=args.apt,
         blue_agent=args.blue_agent,
+        rw_defender_path=args.rw_defender,
+        apt_defender_path=args.apt_defender,
+        cm_defender_path=args.cm_defender,
         use_embedding_agents=args.embedding_agent,
         reduce_rewards=args.reduce_rewards,
         hierarchical=args.hierarchical,

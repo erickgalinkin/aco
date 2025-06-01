@@ -517,6 +517,116 @@ class DynamicStatePPO(PPO):
         return action.item()
 
 
+class HierarchicalPPO(PPO):
+    def __init__(
+        self,
+        state_dim,
+        action_dim,
+        pretrained_ransomware,
+        pretrained_apt,
+        pretrained_cryptominer,
+        hidden_dim=256,
+        k_epochs=5,
+        lr_actor=0.001,
+        lr_critic=0.0015,
+        gamma=0.99,
+        eps_clip=0.2,
+        has_continuous_action_space=False,
+        action_std_init=0.6,
+        batch_size=512,
+        embedding=False,
+    ):
+        if embedding:
+            raise NotImplementedError("HierarchicalPPO does not support embedding")
+        self.latent_dim = 3
+        self.rw = ActorCritic(
+            state_dim=state_dim,
+            hidden_dim=hidden_dim,
+            action_dim=action_dim,
+            has_continuous_action_space=has_continuous_action_space,
+            action_std_init=action_std_init,
+        ).to(DEVICE)
+        self.rw.load_state_dict(
+            torch.load(pretrained_ransomware, map_location=lambda storage, loc: storage)
+        )
+        self.apt = ActorCritic(
+            state_dim=state_dim,
+            hidden_dim=hidden_dim,
+            action_dim=action_dim,
+            has_continuous_action_space=has_continuous_action_space,
+            action_std_init=action_std_init,
+        ).to(DEVICE)
+        self.apt.load_state_dict(
+            torch.load(pretrained_apt, map_location=lambda storage, loc: storage)
+        )
+        self.crypto = ActorCritic(
+            state_dim=state_dim,
+            hidden_dim=hidden_dim,
+            action_dim=action_dim,
+            has_continuous_action_space=has_continuous_action_space,
+            action_std_init=action_std_init,
+        ).to(DEVICE)
+        self.crypto.load_state_dict(
+            torch.load(
+                pretrained_cryptominer, map_location=lambda storage, loc: storage
+            )
+        )
+        super().__init__(
+            state_dim=state_dim,
+            hidden_dim=hidden_dim,
+            action_dim=self.latent_dim,
+            k_epochs=k_epochs,
+            lr_actor=lr_actor,
+            lr_critic=lr_critic,
+            gamma=gamma,
+            eps_clip=eps_clip,
+            batch_size=batch_size,
+        )
+
+    def select_action(self, state):
+        with torch.no_grad():
+            state = torch.FloatTensor(state).to(DEVICE)
+
+            # action_dim dimensional
+            rw_action_probs = self.rw.actor(state)
+            apt_action_probs = self.apt.actor(state)
+            crypto_action_probs = self.crypto.actor(state)
+
+            # 1 dimensional
+            rw_state_val = self.rw.critic(state)
+            apt_state_val = self.apt.critic(state)
+            crypto_state_val = self.crypto.actor(state)
+
+            action_input = torch.cat(
+                [rw_action_probs, apt_action_probs, crypto_action_probs], dim=0
+            )
+            state_input = torch.cat(
+                [rw_state_val, apt_state_val, crypto_state_val], dim=0
+            )
+
+            action_probs = self.policy_old.actor(action_input)
+            state_val = self.policy_old.critic(state_input)
+
+            dist = Categorical(action_probs)
+            action = dist.sample()
+            action_logprob = dist.log_prob(action)
+
+            self.buffer.states.append(action_input)
+            self.buffer.actions.append(action)
+            self.buffer.logprobs.append(action_logprob)
+            self.buffer.state_values.append(state_val)
+
+            if action.item() == 0:
+                action_to_take, _, _ = self.rw.act(state)
+            elif action.item() == 1:
+                action_to_take, _, _ = self.apt.act(state)
+            else:
+                logging.debug("Tracking fallthrough to cryptominer.")
+                action_to_take, _, _ = self.crypto.act(state)
+
+            return action_to_take.item()
+
+
 class CardiffAC(nn.Module):
     def __init__(self, state_dim, action_dim):
         super(CardiffAC, self).__init__()

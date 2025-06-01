@@ -2,7 +2,7 @@ import os
 import copy
 import numpy as np
 from CybORG.Agents.SimpleAgents.BaseAgent import BaseAgent
-from aco.models import PPO, DynamicStatePPO, CardiffAC, RolloutBuffer
+from aco.models import PPO, DynamicStatePPO, CardiffAC, RolloutBuffer, HierarchicalPPO
 import torch
 import torch.nn as nn
 
@@ -69,6 +69,32 @@ class BlueAgent(BaseAgent):
 
     def end_episode(self):
         pass
+
+
+class HierarchicalBlueAgent(BaseAgent):
+    def __init__(
+        self,
+        ransomware,
+        apt,
+        cryptominer,
+        action_space=None,
+        action_size=145,
+        state_size=52,
+        model=None,
+        embedding=False,
+    ):
+        self.action_space = action_space
+        self.model = HierarchicalPPO(
+            state_dim=state_size,
+            action_dim=action_size,
+            pretrained_ransomware=ransomware,
+            pretrained_apt=apt,
+            pretrained_cryptominer=cryptominer,
+            embedding=embedding,
+        )
+
+        if model is not None:
+            self.model.load(model)
 
 
 class CardiffPPO(BaseAgent):
@@ -557,7 +583,21 @@ def load_blue_agent(load_path: str, scenario: str, embedding=False):
     return blue_agent
 
 
-def load_hippo_agent(load_path: str, scenario: str, embedding=False):
-    return BlueSleepAgent(
-        action_size=145, state_size=52, model=load_path, embedding=embedding
+def load_hippo_agent(
+    load_path: str,
+    ransomware: str,
+    apt: str,
+    cryptominer: str,
+    scenario: str,
+    embedding=False,
+):
+    hippo_agent = HierarchicalBlueAgent(
+        ransomware=ransomware,
+        apt=apt,
+        cryptominer=cryptominer,
+        action_size=145,
+        state_size=52,
+        model=load_path,
+        embedding=embedding,
     )
+    return hippo_agent
