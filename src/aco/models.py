@@ -600,12 +600,12 @@ class HierarchicalPPO(PPO):
             action_input = torch.cat(
                 [rw_action_probs, apt_action_probs, crypto_action_probs], dim=0
             )
-            state_input = torch.cat(
-                [rw_state_val, apt_state_val, crypto_state_val], dim=0
-            )
+            # state_input = torch.cat(
+            #     [rw_state_val, apt_state_val, crypto_state_val], dim=0
+            # )
 
             action_probs = self.policy_old.actor(action_input)
-            state_val = self.policy_old.critic(state_input)
+            state_val = self.policy_old.critic(action_input)
 
             dist = Categorical(action_probs)
             action = dist.sample()
