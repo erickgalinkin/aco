@@ -572,7 +572,7 @@ class HierarchicalPPO(PPO):
             )
         )
         super().__init__(
-            state_dim=state_dim,
+            state_dim=action_dim * self.latent_dim,
             hidden_dim=hidden_dim,
             action_dim=self.latent_dim,
             k_epochs=k_epochs,
@@ -595,7 +595,7 @@ class HierarchicalPPO(PPO):
             # 1 dimensional
             rw_state_val = self.rw.critic(state)
             apt_state_val = self.apt.critic(state)
-            crypto_state_val = self.crypto.actor(state)
+            crypto_state_val = self.crypto.critic(state)
 
             action_input = torch.cat(
                 [rw_action_probs, apt_action_probs, crypto_action_probs], dim=0
