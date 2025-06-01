@@ -185,10 +185,16 @@ def run_training_example(
                     action = cyborg.agents[player].get_action(observation, action_space)
                     # B_line never Sleeps except when it encounters an exception.
                     if isinstance(action, Sleep):
-                        prior_observation = cyborg.env.env.env.env.env.get_agent_state("Red")
+                        prior_observation = cyborg.env.env.env.env.env.get_agent_state(
+                            "Red"
+                        )
                         if ["User0"] in prior_observation:
-                            cyborg.agents[player].initial_ip = prior_observation['User0']['Interface'][0]['IP Address']
-                            cyborg.agents[player].last_subnet = prior_observation['User0']['Interface'][0]['Subnet']
+                            cyborg.agents[player].initial_ip = prior_observation[
+                                "User0"
+                            ]["Interface"][0]["IP Address"]
+                            cyborg.agents[player].last_subnet = prior_observation[
+                                "User0"
+                            ]["Interface"][0]["Subnet"]
                         action = cyborg.agents[player].get_action(
                             observation, action_space
                         )
@@ -262,16 +268,16 @@ def run_training_example(
                         defending_agent.model.buffer.is_terminals.append(done)
                         defending_agent.train(observation)
 
-            if done:
-                red_type = scenario_mapping[scenario]
-                writer.add_scalar(f"{red_type} Episode Reward", rewards["Red"], i)
-                writer.add_scalar("Blue Episode Reward", rewards["Blue"], i)
-                writer.add_scalar("Episode Length", j + 1, i)
-                cyborg.agents["Red"].end_episode()
-                cyborg.agents["Blue"].end_episode()
+                if done:
+                    red_type = scenario_mapping[scenario]
+                    writer.add_scalar(f"{red_type} Episode Reward", rewards["Red"], i)
+                    writer.add_scalar("Blue Episode Reward", rewards["Blue"], i)
+                    writer.add_scalar("Episode Length", j + 1, i)
+                    cyborg.agents["Red"].end_episode()
+                    cyborg.agents["Blue"].end_episode()
 
-            if done and j < max_steps:
-                break
+                if done and j < max_steps:
+                    break
 
     defender_type = "hierarchical" if hierarchical else "multitype"
     logging.info(f"Finished {defender_type} training.")
