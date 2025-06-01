@@ -593,9 +593,9 @@ class HierarchicalPPO(PPO):
             crypto_action_probs = self.crypto.actor(state)
 
             # 1 dimensional
-            rw_state_val = self.rw.critic(state)
-            apt_state_val = self.apt.critic(state)
-            crypto_state_val = self.crypto.critic(state)
+            # rw_state_val = self.rw.critic(state)
+            # apt_state_val = self.apt.critic(state)
+            # crypto_state_val = self.crypto.critic(state)
 
             action_input = torch.cat(
                 [rw_action_probs, apt_action_probs, crypto_action_probs], dim=0

@@ -196,11 +196,15 @@ def run_training_example(
     for cyborg in cyborgs.values():
         cyborg.agents["Blue"] = defending_agent
 
+    defender_type = "hierarchical" if hierarchical else "multitype"
+
     print(
-        f"Starting multitype training. Results logged at ./logs/multitype_{cyborgs['Scenario2'].uuid}"
+        f"Starting {defender_type} training. Results logged at ./logs/{defender_type}_{cyborgs['Scenario2'].uuid}"
     )
 
-    writer = SummaryWriter(log_dir=f"./logs/multitype_{cyborgs['Scenario2'].uuid}")
+    writer = SummaryWriter(
+        log_dir=f"./logs/{defender_type}_{cyborgs['Scenario2'].uuid}"
+    )
 
     for i in tqdm(range(max_eps), position=0):
         scenario = np.random.choice(scenarios)
@@ -313,7 +317,6 @@ def run_training_example(
                 if done and j < max_steps:
                     break
 
-    defender_type = "hierarchical" if hierarchical else "multitype"
     logging.info(f"Finished {defender_type} training.")
     print(f"{defender_type} training complete! Saving results...")
     model_subdir = f"training_run_{max_eps}_{max_steps}_{defender_type}_{cyborgs['Scenario2'].uuid}"
