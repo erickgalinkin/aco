@@ -306,16 +306,16 @@ def run_training_example(
                         defending_agent.model.buffer.is_terminals.append(done)
                         defending_agent.train(observation)
 
-                if done:
-                    red_type = scenario_mapping[scenario]
-                    writer.add_scalar(f"{red_type} Episode Reward", rewards["Red"], i)
-                    writer.add_scalar("Blue Episode Reward", rewards["Blue"], i)
-                    writer.add_scalar("Episode Length", j + 1, i)
-                    cyborg.agents["Red"].end_episode()
-                    cyborg.agents["Blue"].end_episode()
+            if done:
+                red_type = scenario_mapping[scenario]
+                writer.add_scalar(f"{red_type} Episode Reward", rewards["Red"], i)
+                writer.add_scalar("Blue Episode Reward", rewards["Blue"], i)
+                writer.add_scalar("Episode Length", j + 1, i)
+                cyborg.agents["Red"].end_episode()
+                cyborg.agents["Blue"].end_episode()
 
-                if done and j < max_steps:
-                    break
+            if done and j < max_steps:
+                break
 
     logging.info(f"Finished {defender_type} training.")
     print(f"{defender_type} training complete! Saving results...")
