@@ -325,7 +325,9 @@ def run_training_example(
     model_path = Path(f"./checkpoints/{model_subdir}")
     model_path.mkdir(parents=True, exist_ok=True)
     for scenario_name, cyborg in cyborgs.items():
-        red_type = scenario_mapping[scenario]
+        if scenario_name == "B_line":
+            continue
+        red_type = scenario_mapping[scenario_name]
         cyborg.agents["Red"].model.save(
             f"./checkpoints/{model_subdir}/{red_type}_red.ckpt"
         )
