@@ -131,7 +131,7 @@ def evaluate_models(
     use_embedding_agents: bool = False,
     max_invalid: int = 30,
 ):
-    model_id = blue_agent_path.split("/")[-2].split("_")[0]
+    model_id = blue_agent_path.split("/")[-2].split("_")[-1]
     logging.info("Starting evaluation...")
     scenarios = ["B_line", "Scenario2", "Scenario2_ransomware", "Scenario2_cryptominer"]
 
@@ -248,9 +248,7 @@ def evaluate_models(
                                     cyborg.get_last_action(player), InvalidAction
                                 ):
                                     valid_action = True
-                        if isinstance(
-                            cyborg.get_last_action(player), InvalidAction
-                        ):
+                        if isinstance(cyborg.get_last_action(player), InvalidAction):
                             r = -1.0
                         if j < num_steps - 1:
                             done = terminated or truncated
