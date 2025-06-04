@@ -257,7 +257,7 @@ def evaluate_models(
                         else:
                             done = True
                         rewards[player].append(r)
-                        actions[player].append(action)
+                        actions[player].append(str(cyborg.get_last_action(player)))
 
                     if done:
                         overall_rewards["Red"][i] = rewards["Red"]
