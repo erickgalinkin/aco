@@ -621,7 +621,6 @@ class HierarchicalPPO(PPO):
             elif action.item() == 1:
                 action_to_take, _, _ = self.apt.act(state)
             else:
-                logging.debug("Tracking fallthrough to cryptominer.")
                 action_to_take, _, _ = self.crypto.act(state)
 
             return action_to_take.item()
