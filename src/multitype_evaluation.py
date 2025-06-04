@@ -185,6 +185,7 @@ def evaluate_models(
             overall_rewards = {"Red": dict(), "Blue": dict()}
             overall_actions = {"Red": dict(), "Blue": dict()}
             cyborg = cyborgs[scenario]
+            cyborg.reset("Red")
             for i in tqdm(range(MAX_EPS), position=0, leave=False):
                 rewards = {"Red": list(), "Blue": list()}
                 actions = {"Red": list(), "Blue": list()}
@@ -247,23 +248,16 @@ def evaluate_models(
                                     cyborg.get_last_action(player), InvalidAction
                                 ):
                                     valid_action = True
-                                elif attempts <= max_invalid:
-                                    cyborg.agents[player].model.buffer.states.pop()
-                                    cyborg.agents[player].model.buffer.actions.pop()
-                                    cyborg.agents[player].model.buffer.logprobs.pop()
-                                    cyborg.agents[
-                                        player
-                                    ].model.buffer.state_values.pop()
-                            if isinstance(
-                                cyborg.get_last_action(player), InvalidAction
-                            ):
-                                r = -1.0
-                            if j < num_steps - 1:
-                                done = terminated or truncated
-                            else:
-                                done = True
-                            rewards[player].append(r)
-                            actions[player].append(action)
+                        if isinstance(
+                            cyborg.get_last_action(player), InvalidAction
+                        ):
+                            r = -1.0
+                        if j < num_steps - 1:
+                            done = terminated or truncated
+                        else:
+                            done = True
+                        rewards[player].append(r)
+                        actions[player].append(action)
 
                     if done:
                         overall_rewards["Red"][i] = rewards["Red"]
