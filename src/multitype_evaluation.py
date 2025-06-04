@@ -27,10 +27,19 @@ parser.add_argument(
     "--model_path", type=str, help="Path to saved defender model", required=True
 )
 parser.add_argument(
-    "--hierarchical",
-    action="store_true",
-    default=False,
-    help="Use HiPPO for defending agent",
+    "--ransomware",
+    type=str,
+    default=None,
+    help="Path (.ckpt) to load ransomware attacker.",
+)
+parser.add_argument(
+    "--cryptominer",
+    type=str,
+    default=None,
+    help="Path (.ckpt) to load cryptominer attacker.",
+)
+parser.add_argument(
+    "--apt", type=str, default=None, help="Path (.ckpt) to load apt attacker."
 )
 parser.add_argument(
     "--rw_defender",
@@ -53,6 +62,12 @@ parser.add_argument(
 parser.add_argument(
     "--patience", type=int, default=30, help="Maximum InvalidActions to ignore."
 )
+parser.add_argument(
+    "--hierarchical",
+    action="store_true",
+    default=False,
+    help="Use HiPPO for defending agent",
+)
 
 
 def load_agents(
@@ -65,6 +80,7 @@ def load_agents(
     apt_defender: str = None,
     hierarchical: bool = False,
     use_embedding_agents: bool = False,
+    max_invalid: int = 30,
 ):
     ransomware_agent = load_red_agent(
         load_path=ransomware_path,
@@ -255,11 +271,17 @@ def evaluate_models(
                         overall_actions["Red"][i] = actions["Red"]
                         overall_actions["Blue"][i] = actions["Blue"]
 
-            logger.info(f"Recording episode rewards for scenario {scenario} with {num_steps} steps...")
+            logger.info(
+                f"Recording episode rewards for scenario {scenario} with {num_steps} steps..."
+            )
             data = {"rewards": overall_rewards, "actions": overall_actions}
-            blue_reward = np.average([np.sum(x) for x in overall_rewards["Blue"].values()])
+            blue_reward = np.average(
+                [np.sum(x) for x in overall_rewards["Blue"].values()]
+            )
             blue_std = np.std([np.sum(x) for x in overall_rewards["Blue"].values()])
-            red_reward = np.average([np.sum(x) for x in overall_rewards["Red"].values()])
+            red_reward = np.average(
+                [np.sum(x) for x in overall_rewards["Red"].values()]
+            )
             red_std = np.std([np.sum(x) for x in overall_rewards["Red"].values()])
             meta_rewards[num_steps][scenario] = {
                 "Blue": {"reward": blue_reward, "std": blue_std},
@@ -282,9 +304,24 @@ def evaluate_models(
             blue_std = v[scenario]["Blue"]["std"]
             red_reward = v[scenario]["Red"]["reward"]
             red_std = v[scenario]["Red"]["std"]
-            print(f"Defender reward for scenario {scenario} {k} steps: {blue_reward} +- {blue_std}")
-            print(f"Attacker reward for scenario {scenario} {k} steps: {red_reward} +- {red_std}")
+            print(
+                f"Defender reward for scenario {scenario} {k} steps: {blue_reward} +- {blue_std}"
+            )
+            print(
+                f"Attacker reward for scenario {scenario} {k} steps: {red_reward} +- {red_std}"
+            )
 
 
 if __name__ == "__main__":
     args = parser.parse_args()
+    evaluate_models(
+        ransomware_path=args.ransomware,
+        cryptominer_path=args.cryptominer,
+        apt_path=args.apt,
+        blue_agent_path=args.model_path,
+        rw_defender=args.rw_defender,
+        cm_defender=args.cm_defender,
+        apt_defender=args.apt_defender,
+        hierarchical=args.hierarchical,
+        max_invalid=args.patience,
+    )
