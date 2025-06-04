@@ -264,6 +264,7 @@ def evaluate_models(
                         overall_rewards["Blue"][i] = rewards["Blue"]
                         overall_actions["Red"][i] = actions["Red"]
                         overall_actions["Blue"][i] = actions["Blue"]
+                        cyborg.agents["Red"].end_episode()
 
             logger.info(
                 f"Recording episode rewards for scenario {scenario} with {num_steps} steps..."
