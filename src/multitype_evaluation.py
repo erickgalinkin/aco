@@ -218,7 +218,7 @@ def evaluate_models(
                                         ]
                                     )
                                 action = cyborg.agents[player].get_action(
-                                    observation, action_space
+                                    prior_observation, action_space
                                 )
                                 if isinstance(action, Sleep):
                                     logger.warning("B_line unlikely to run properly!")
@@ -226,6 +226,8 @@ def evaluate_models(
                                 agent=player, action=action
                             )
                             r = results.reward
+                            terminated = results.done
+                            truncated = results.done
                         else:
                             observation = cyborg.get_observation(player)
                             action_space = cyborg.get_action_space(player)
