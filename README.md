@@ -2,4 +2,4 @@
 Agentic Cyber Operations
 
 
-Code reflects work submitted to ESORICS 2025
+Code reflects work submitted to GameSec 2025
